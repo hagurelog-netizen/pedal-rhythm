@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>ペダルリズム 接続テスト</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #15181d;
+    --sub: #5b6470;
+    --line: #d9dde3;
+    --accent: #0b6bcb;
+    --accent-text: #ffffff;
+    --ok: #1a8a4a;
+    --warn: #b45309;
+    --ng: #c62828;
+    --mono-bg: #eef0f3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101216;
+      --card: #1b1f26;
+      --text: #f0f2f5;
+      --sub: #9aa4b2;
+      --line: #313845;
+      --accent: #4d9bff;
+      --accent-text: #08111f;
+      --ok: #4cd37f;
+      --warn: #f0a24b;
+      --ng: #ff7b72;
+      --mono-bg: #12151a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    font-size: 18px;
+    line-height: 1.5;
+    padding: 16px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left));
+  }
+  main { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 4px 0 2px; }
+  h2 { font-size: 20px; margin: 28px 0 10px; }
+  .lead { color: var(--sub); margin: 0 0 14px; font-size: 16px; }
+
+  .banner {
+    border: 2px solid var(--ng);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin: 10px 0 16px;
+    background: var(--card);
+  }
+  .banner strong { color: var(--ng); font-size: 22px; display: block; margin-bottom: 6px; }
+  .banner code { word-break: break-all; background: var(--mono-bg); padding: 2px 6px; border-radius: 6px; }
+
+  .status {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 12px 16px; margin: 8px 0 12px;
+    min-height: 56px;
+  }
+  .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--sub); flex: none; }
+  .dot.connected { background: var(--ok); }
+  .dot.connecting { background: var(--warn); }
+  .dot.disconnected { background: var(--ng); }
+  #statusText { font-weight: 600; word-break: break-all; }
+
+  .buttons { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 8px; }
+  button {
+    font: inherit; font-weight: 700;
+    min-height: 64px; padding: 12px 28px;
+    border-radius: 14px; border: 2px solid var(--accent);
+    background: var(--accent); color: var(--accent-text);
+    cursor: pointer; touch-action: manipulation;
+    flex: 1 1 220px;
+  }
+  button.secondary { background: transparent; color: var(--accent); }
+  button.small { min-height: 48px; padding: 8px 18px; flex: 0 1 auto; font-size: 16px; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  [hidden] { display: none !important; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 8px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 14px 12px 12px; text-align: center; min-width: 0;
+  }
+  .card .label { font-size: 17px; color: var(--sub); font-weight: 600; }
+  .card .value {
+    font-size: clamp(52px, 11vw, 120px); font-weight: 800; line-height: 1.05;
+    font-variant-numeric: tabular-nums; margin: 4px 0 0;
+  }
+  .card .value.stale { color: var(--sub); opacity: 0.55; }
+  .card .unit { font-size: 20px; color: var(--sub); }
+  .card .from { font-size: 14px; color: var(--sub); margin-top: 8px; word-break: break-word; }
+  .extra { color: var(--sub); font-size: 16px; margin: 4px 2px 0; }
+
+  .opt { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 2px 0; font-size: 16px; color: var(--sub); }
+  .opt input {
+    font: inherit; width: 110px; padding: 8px 10px; min-height: 44px;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text);
+  }
+
+  .chars { display: grid; gap: 10px; }
+  .svc { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+  .svc h3 { margin: 0 0 6px; font-size: 18px; }
+  .ch { border-top: 1px solid var(--line); padding: 8px 0; font-size: 16px; }
+  .ch:first-of-type { border-top: 0; }
+  .ch .name { font-weight: 600; word-break: break-all; }
+  .chip {
+    display: inline-block; font-size: 13px; padding: 1px 8px; margin: 0 4px 0 0;
+    border: 1px solid var(--line); border-radius: 999px; color: var(--sub);
+  }
+  .chip.on { border-color: var(--ok); color: var(--ok); }
+  .chip.err { border-color: var(--ng); color: var(--ng); }
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 14px; word-break: break-all;
+  }
+  .hexline { color: var(--sub); margin-top: 2px; }
+  .empty { color: var(--sub); font-size: 16px; }
+
+  textarea#log {
+    width: 100%; min-height: 320px; height: 38vh;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px; line-height: 1.45;
+    background: var(--mono-bg); color: var(--text);
+    border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+    resize: vertical; white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto;
+  }
+  .note { color: var(--sub); font-size: 15px; margin-top: 18px; }
+
+  @media (max-width: 560px) {
+    body { font-size: 17px; }
+    .metrics { grid-template-columns: 1fr; }
+    .card .value { font-size: 72px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>バイク接続テスト</h1>
+  <p class="lead">エアロバイクからどんな数字が届くかを確かめるだけのページです。バイク側の設定は一切変更しません(読み取りのみ)。</p>
+
+  <div id="unsupported" class="banner" hidden>
+    <strong id="unsupportedTitle">このブラウザでは Bluetooth を使えません</strong>
+    <div id="unsupportedBody"></div>
+  </div>
+
+  <div class="status" aria-live="polite">
+    <span id="dot" class="dot"></span>
+    <span id="statusText">未接続</span>
+  </div>
+
+  <div class="buttons">
+    <button id="btnConnect" type="button">バイクに接続</button>
+    <button id="btnReconnect" type="button" hidden>再接続</button>
+    <button id="btnPick" type="button" class="secondary" hidden>別のデバイスを選ぶ</button>
+    <button id="btnDisconnect" type="button" class="secondary" hidden>切断</button>
+  </div>
+
+  <div class="metrics">
+    <div class="card">
+      <div class="label">ケイデンス</div>
+      <div class="value stale" id="vCadence">--</div>
+      <div class="unit">rpm</div>
+      <div class="from" id="fCadence">取得元: -</div>
+    </div>
+    <div class="card">
+      <div class="label">速度</div>
+      <div class="value stale" id="vSpeed">--</div>
+      <div class="unit">km/h</div>
+      <div class="from" id="fSpeed">取得元: -</div>
+    </div>
+    <div class="card">
+      <div class="label">パワー</div>
+      <div class="value stale" id="vPower">--</div>
+      <div class="unit">W</div>
+      <div class="from" id="fPower">取得元: -</div>
+    </div>
+  </div>
+  <div class="extra" id="extra"></div>
+  <div class="opt">
+    <label for="circ">CSC の速度計算に使う周長(mm、仮の値):</label>
+    <input id="circ" type="number" inputmode="numeric" min="500" max="5000" step="1" value="2096">
+    <span>※ホイール回転データを持つ機種でだけ意味があります</span>
+  </div>
+
+  <h2>見つかったサービスと characteristic</h2>
+  <div id="chars" class="chars"><div class="empty">まだ接続していません。</div></div>
+
+  <h2>生データのログ(新しい順・最新 <span id="logMax"></span> 件)</h2>
+  <div class="buttons">
+    <button id="btnCopy" type="button" class="small">ログをコピー</button>
+    <button id="btnClear" type="button" class="small secondary">ログを消す</button>
+  </div>
+  <textarea id="log" readonly spellcheck="false" aria-label="通知ログ"></textarea>
+
+  <p class="note">
+    ここで調べられるのは、このページが事前に指定したサービス(FTMS・CSC・Cycling Power・心拍・Device Information など)だけです。
+    それ以外の独自サービスは、Web Bluetooth の仕様上ここには表示されません。
+  </p>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- 定数 ----------
+  var LOG_MAX = 300;
+  var FRESH_MS = 4000;            // この時間より古い値は「--」にする
+  var CSC_IDLE_MS = 2500;         // この時間クランクイベントが進まなければ 0 rpm 扱い
+  var REQUIRED_SERVICES = [0x1826, 0x1816, 0x1818, 0x180d, 0x180a];
+  var EXTRA_SERVICES = [0x1800, 0x1801, 0x180f, 0xfff0, 0xffe0]; // 独自サービスの手がかり探し用
+  var BASE_SUFFIX = '-0000-1000-8000-00805f9b34fb';
+
+  var SERVICE_NAMES = {
+    '1800': 'Generic Access', '1801': 'Generic Attribute', '180a': 'Device Information',
+    '180d': 'Heart Rate', '180f': 'Battery', '1816': 'Cycling Speed and Cadence (CSC)',
+    '1818': 'Cycling Power', '1826': 'Fitness Machine (FTMS)'
+  };
+  var CHAR_NAMES = {
+    '2a00': 'Device Name', '2a01': 'Appearance', '2a04': 'Peripheral Preferred Connection Parameters',
+    '2a19': 'Battery Level', '2a23': 'System ID', '2a24': 'Model Number', '2a25': 'Serial Number',
+    '2a26': 'Firmware Revision', '2a27': 'Hardware Revision', '2a28': 'Software Revision',
+    '2a29': 'Manufacturer Name', '2a37': 'Heart Rate Measurement', '2a50': 'PnP ID',
+    '2a5b': 'CSC Measurement', '2a5c': 'CSC Feature', '2a5d': 'Sensor Location', '2a55': 'SC Control Point',
+    '2a63': 'Cycling Power Measurement', '2a65': 'Cycling Power Feature', '2a66': 'Cycling Power Control Point',
+    '2acc': 'Fitness Machine Feature', '2ad2': 'Indoor Bike Data', '2ad3': 'Training Status',
+    '2ad4': 'Supported Speed Range', '2ad5': 'Supported Inclination Range',
+    '2ad6': 'Supported Resistance Level Range', '2ad8': 'Supported Power Range',
+    '2ad9': 'Fitness Machine Control Point', '2ada': 'Fitness Machine Status'
+  };
+
+  // ---------- 小物 ----------
+  function $(id) { return document.getElementById(id); }
+  function pad(n, w) { n = String(n); while (n.length < (w || 2)) n = '0' + n; return n; }
+  function nowStamp() {
+    var d = new Date();
+    return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + '.' + pad(d.getMilliseconds(), 3);
+  }
+  function shortUuid(uuid) {
+    uuid = String(uuid).toLowerCase();
+    if (uuid.length === 36 && uuid.slice(0, 4) === '0000' && uuid.slice(8) === BASE_SUFFIX) return uuid.slice(4, 8);
+    return uuid;
+  }
+  function hex(dv) {
+    var a = [];
+    for (var i = 0; i < dv.byteLength; i++) a.push(pad(dv.getUint8(i).toString(16), 2));
+    return a.join(' ');
+  }
+  function asciiOrNull(dv) {
+    var s = '';
+    for (var i = 0; i < dv.byteLength; i++) {
+      var b = dv.getUint8(i);
+      if (b === 0 && i === dv.byteLength - 1) break;
+      if (b < 0x20 || b > 0x7e) return null;
+      s += String.fromCharCode(b);
+    }
+    return s.length ? s : null;
+  }
+  function withTimeout(p, ms, label) {
+    var t;
+    var timer = new Promise(function (_, rej) { t = setTimeout(function () { rej(new Error(label + ' がタイムアウトしました')); }, ms); });
+    return Promise.race([p, timer]).then(function (v) { clearTimeout(t); return v; }, function (e) { clearTimeout(t); throw e; });
+  }
+  function errText(e) { return (e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : String(e)); }
+
+  // ---------- バイト列リーダ(長さが足りなければ例外) ----------
+  function Reader(dv) { this.dv = dv; this.o = 0; }
+  Reader.prototype.need = function (n) {
+    if (this.o + n > this.dv.byteLength) {
+      throw new RangeError('データ長が足りません (位置 ' + this.o + ' に ' + n + ' バイト必要、全体 ' + this.dv.byteLength + ')');
+    }
+  };
+  Reader.prototype.u8 = function () { this.need(1); var v = this.dv.getUint8(this.o); this.o += 1; return v; };
+  Reader.prototype.u16 = function () { this.need(2); var v = this.dv.getUint16(this.o, true); this.o += 2; return v; };
+  Reader.prototype.s16 = function () { this.need(2); var v = this.dv.getInt16(this.o, true); this.o += 2; return v; };
+  Reader.prototype.u24 = function () { this.need(3); var v = this.dv.getUint16(this.o, true) | (this.dv.getUint8(this.o + 2) << 16); this.o += 3; return v; };
+  Reader.prototype.u32 = function () { this.need(4); var v = this.dv.getUint32(this.o, true); this.o += 4; return v; };
+  Reader.prototype.rest = function () { return this.dv.byteLength - this.o; };
+
+  // ---------- 規格ごとのパーサ(純粋関数) ----------
+  // FTMS Indoor Bike Data (0x2AD2)。flags bit0 は "More Data" で、0 のとき瞬間速度が入っている点に注意。
+  function parseFtmsIndoorBike(dv) {
+    var r = new Reader(dv);
+    var f = r.u16();
+    var o = { flags: f };
+    if (!(f & 0x0001)) o.speedKmh = r.u16() * 0.01;
+    if (f & 0x0002) o.avgSpeedKmh = r.u16() * 0.01;
+    if (f & 0x0004) o.cadenceRpm = r.u16() * 0.5;
+    if (f & 0x0008) o.avgCadenceRpm = r.u16() * 0.5;
+    if (f & 0x0010) o.distanceM = r.u24();
+    if (f & 0x0020) o.resistance = r.s16();
+    if (f & 0x0040) o.powerW = r.s16();
+    if (f & 0x0080) o.avgPowerW = r.s16();
+    if (f & 0x0100) { o.totalKcal = r.u16(); o.kcalPerHour = r.u16(); o.kcalPerMin = r.u8(); }
+    if (f & 0x0200) o.heartRate = r.u8();
+    if (f & 0x0400) o.met = r.u8() * 0.1;
+    if (f & 0x0800) o.elapsedS = r.u16();
+    if (f & 0x1000) o.remainingS = r.u16();
+    o.leftoverBytes = r.rest();
+    return o;
+  }
+  function describeFtms(o) {
+    var p = ['flags=0x' + o.flags.toString(16)];
+    if (o.speedKmh != null) p.push('速度 ' + o.speedKmh.toFixed(2) + ' km/h');
+    if (o.cadenceRpm != null) p.push('ケイデンス ' + o.cadenceRpm.toFixed(1) + ' rpm');
+    if (o.powerW != null) p.push('パワー ' + o.powerW + ' W');
+    if (o.resistance != null) p.push('抵抗 ' + o.resistance);
+    if (o.distanceM != null) p.push('距離 ' + o.distanceM + ' m');
+    if (o.heartRate != null) p.push('心拍 ' + o.heartRate);
+    if (o.elapsedS != null) p.push('経過 ' + o.elapsedS + ' s');
+    if (o.leftoverBytes) p.push('未解析の余り ' + o.leftoverBytes + ' バイト');
+    return p.join(' / ');
+  }
+
+  // CSC Measurement (0x2A5B): 累積回転数と最終イベント時刻(1/1024 秒)
+  function parseCsc(dv) {
+    var r = new Reader(dv);
+    var f = r.u8();
+    var o = { flags: f };
+    if (f & 0x01) { o.wheelRevs = r.u32(); o.wheelTime = r.u16(); }
+    if (f & 0x02) { o.crankRevs = r.u16(); o.crankTime = r.u16(); }
+    o.leftoverBytes = r.rest();
+    return o;
+  }
+  // Cycling Power Measurement (0x2A63)。ケイデンス計算に必要なクランクデータまで読む。
+  function parsePower(dv) {
+    var r = new Reader(dv);
+    var f = r.u16();
+    var o = { flags: f };
+    o.powerW = r.s16();
+    if (f & 0x0001) o.balance = r.u8() * 0.5;
+    if (f & 0x0004) o.accTorque = r.u16() / 32;
+    if (f & 0x0010) { o.wheelRevs = r.u32(); o.wheelTime = r.u16(); }   // 1/2048 秒
+    if (f & 0x0020) { o.crankRevs = r.u16(); o.crankTime = r.u16(); }   // 1/1024 秒
+    o.leftoverBytes = r.rest(); // 極値・角度・エネルギーなどはここでは解析しない
+    return o;
+  }
+  // Heart Rate Measurement (0x2A37)
+  function parseHeartRate(dv) {
+    var r = new Reader(dv);
+    var f = r.u8();
+    return { flags: f, bpm: (f & 0x01) ? r.u16() : r.u8() };
+  }
+
+  // 累積回転数と時刻から回転数/秒を求める。前回値との差が 0 なら null(=新イベントなし)。
+  function RevTracker(timeHz, revBits) {
+    this.timeHz = timeHz; this.revMask = revBits === 32 ? 0xffffffff : 0xffff;
+    this.reset();
+  }
+  RevTracker.prototype.reset = function () { this.prev = null; this.lastEventAt = 0; this.lastRate = null; };
+  // 返り値: 回転数/秒 (数値) / 0 (停止とみなす) / null (まだ判断できない)
+  RevTracker.prototype.update = function (revs, time, nowMs) {
+    var p = this.prev;
+    this.prev = { revs: revs, time: time };
+    if (!p) { this.lastEventAt = nowMs; return null; }
+    var dRev = (revs - p.revs) & this.revMask;
+    var dT = (time - p.time) & 0xffff;
+    if (dT === 0) {
+      // 新しいイベントなし。しばらく続いたら停止扱い。
+      if (this.lastRate !== null && nowMs - this.lastEventAt > CSC_IDLE_MS) { this.lastRate = 0; }
+      return this.lastRate;
+    }
+    this.lastEventAt = nowMs;
+    var rate = dRev / (dT / this.timeHz);
+    this.lastRate = rate;
+    return rate;
+  }
+
+  // ---------- 状態 ----------
+  var state = {
+    phase: 'idle',        // idle / connecting / connected / disconnected
+    device: null,
+    manualDisconnect: false,
+    chars: new Map(),
+    vals: { ftms: {}, cpwr: {}, csc: {}, hr: {} },
+    logs: [],
+    wakeLock: null,
+    trk: {
+      cscCrank: new RevTracker(1024, 16), cscWheel: new RevTracker(1024, 32),
+      pwrCrank: new RevTracker(1024, 16), pwrWheel: new RevTracker(2048, 32)
+    },
+    renderQueued: false
+  };
+
+  function setVal(src, key, v) { state.vals[src][key] = { v: v, t: Date.now() }; }
+
+  function resetParserState() {
+    state.vals = { ftms: {}, cpwr: {}, csc: {}, hr: {} };
+    Object.keys(state.trk).forEach(function (k) { state.trk[k].reset(); });
+  }
+
+  // ---------- ログ ----------
+  function log(tag, msg) {
+    state.logs.unshift(nowStamp() + '  ' + tag + '  ' + msg);
+    if (state.logs.length > LOG_MAX) state.logs.length = LOG_MAX;
+    queueLogRender();
+  }
+  var logTimer = null;
+  function queueLogRender() {
+    if (logTimer) return;
+    logTimer = setTimeout(function () {
+      logTimer = null;
+      $('log').value = state.logs.join('\n');
+    }, 150);
+  }
+
+  // ---------- 画面の更新 ----------
+  function setStatus(phase, text) {
+    state.phase = phase;
+    $('dot').className = 'dot ' + phase;
+    $('statusText').textContent = text;
+    var idle = phase === 'idle';
+    $('btnConnect').hidden = !(idle || phase === 'connecting');
+    $('btnConnect').disabled = phase === 'connecting';
+    $('btnConnect').textContent = phase === 'connecting' ? '接続中…' : 'バイクに接続';
+    $('btnDisconnect').hidden = phase !== 'connected';
+    $('btnReconnect').hidden = phase !== 'disconnected';
+    $('btnPick').hidden = phase !== 'disconnected';
+  }
+
+  function fresh(src, key) {
+    var e = state.vals[src][key];
+    return e && Date.now() - e.t <= FRESH_MS ? e.v : null;
+  }
+  function pick(cands) {
+    for (var i = 0; i < cands.length; i++) {
+      var v = fresh(cands[i][0], cands[i][1]);
+      if (v !== null && v !== undefined && isFinite(v)) return { v: v, label: cands[i][2] };
+    }
+    return null;
+  }
+  function fmt(v, digits) { return v === null || v === undefined ? '—' : Number(v).toFixed(digits); }
+  function breakdown(items) {
+    return '取得元: ' + items.map(function (it) {
+      var v = fresh(it[0], it[1]);
+      return it[2] + ' ' + (v === null || v === undefined ? '—' : Number(v).toFixed(it[3]));
+    }).join(' ・ ');
+  }
+  function show(valueId, fromId, chosen, digits, items) {
+    var el = $(valueId);
+    el.textContent = chosen ? Number(chosen.v).toFixed(digits) : '--';
+    el.className = 'value' + (chosen ? '' : ' stale');
+    $(fromId).textContent = breakdown(items) + (chosen ? '  → 表示: ' + chosen.label : '');
+  }
+  function render() {
+    state.renderQueued = false;
+    var cad = pick([['ftms', 'cadence', 'FTMS'], ['cpwr', 'cadence', 'Power'], ['csc', 'cadence', 'CSC']]);
+    var spd = pick([['ftms', 'speed', 'FTMS'], ['csc', 'speed', 'CSC']]);
+    var pwr = pick([['ftms', 'power', 'FTMS'], ['cpwr', 'power', 'Power']]);
+    show('vCadence', 'fCadence', cad, 0, [['ftms', 'cadence', 'FTMS', 1], ['cpwr', 'cadence', 'Power', 1], ['csc', 'cadence', 'CSC', 1]]);
+    show('vSpeed', 'fSpeed', spd, 1, [['ftms', 'speed', 'FTMS', 1], ['csc', 'speed', 'CSC', 1]]);
+    show('vPower', 'fPower', pwr, 0, [['ftms', 'power', 'FTMS', 0], ['cpwr', 'power', 'Power', 0]]);
+    var ex = [];
+    var res = fresh('ftms', 'resistance'); if (res !== null) ex.push('抵抗レベル ' + res);
+    var hr = pick([['hr', 'bpm', '心拍'], ['ftms', 'heartRate', 'FTMS']]); if (hr) ex.push('心拍 ' + hr.v);
+    var dist = fresh('ftms', 'distance'); if (dist !== null) ex.push('距離 ' + dist + ' m');
+    $('extra').textContent = ex.join('  ・  ');
+  }
+  function queueRender() {
+    if (state.renderQueued) return;
+    state.renderQueued = true;
+    requestAnimationFrame(render);
+  }
+  setInterval(render, 500); // 古くなった値を「--」に戻す
+
+  function chip(text, cls) {
+    var s = document.createElement('span');
+    s.className = 'chip' + (cls ? ' ' + cls : '');
+    s.textContent = text;
+    return s;
+  }
+  function renderChars() {
+    var root = $('chars');
+    root.textContent = '';
+    if (!state.chars.size) {
+      var d = document.createElement('div');
+      d.className = 'empty';
+      d.textContent = '見つかったサービスはありません。';
+      root.appendChild(d);
+      return;
+    }
+    var groups = new Map();
+    state.chars.forEach(function (info) {
+      if (!groups.has(info.svcUuid)) groups.set(info.svcUuid, []);
+      groups.get(info.svcUuid).push(info);
+    });
+    groups.forEach(function (list, svcUuid) {
+      var sShort = shortUuid(svcUuid);
+      var box = document.createElement('div'); box.className = 'svc';
+      var h = document.createElement('h3');
+      h.textContent = 'サービス ' + sShort + (SERVICE_NAMES[sShort] ? '  ' + SERVICE_NAMES[sShort] : '');
+      box.appendChild(h);
+      list.forEach(function (info) {
+        var row = document.createElement('div'); row.className = 'ch';
+        var name = document.createElement('div'); name.className = 'name mono';
+        name.textContent = info.short + (CHAR_NAMES[info.short] ? '  ' + CHAR_NAMES[info.short] : '');
+        row.appendChild(name);
+        var chips = document.createElement('div');
+        info.props.forEach(function (p) { chips.appendChild(chip(p)); });
+        info.chipsEl = document.createElement('span');
+        chips.appendChild(info.chipsEl);
+        row.appendChild(chips);
+        info.hexEl = document.createElement('div'); info.hexEl.className = 'hexline mono';
+        row.appendChild(info.hexEl);
+        box.appendChild(row);
+        updateRow(info);
+      });
+      root.appendChild(box);
+    });
+  }
+  function updateRow(info) {
+    if (!info.chipsEl) return;
+    info.chipsEl.textContent = '';
+    if (info.subscribed) info.chipsEl.appendChild(chip('購読中 ' + info.count + ' 回', 'on'));
+    if (info.note) info.chipsEl.appendChild(chip(info.note, 'err'));
+    var t = '';
+    if (info.lastHex) t = '最新: ' + info.lastHex;
+    else if (info.readHex) t = '読取: ' + info.readHex + (info.readText ? '  「' + info.readText + '」' : '');
+    info.hexEl.textContent = t;
+  }
+
+  // ---------- 通知の処理 ----------
+  function handleValue(info, dv) {
+    var now = Date.now();
+    info.count++;
+    info.lastHex = hex(dv);
+    var text = '';
+    try {
+      if (info.short === '2ad2') {
+        var o = parseFtmsIndoorBike(dv);
+        text = describeFtms(o);
+        if (o.speedKmh != null) setVal('ftms', 'speed', o.speedKmh);
+        if (o.cadenceRpm != null) setVal('ftms', 'cadence', o.cadenceRpm);
+        if (o.powerW != null) setVal('ftms', 'power', o.powerW);
+        if (o.resistance != null) setVal('ftms', 'resistance', o.resistance);
+        if (o.distanceM != null) setVal('ftms', 'distance', o.distanceM);
+        if (o.heartRate != null && o.heartRate > 0) setVal('ftms', 'heartRate', o.heartRate);
+      } else if (info.short === '2a5b') {
+        var c = parseCsc(dv);
+        var parts = ['flags=0x' + c.flags.toString(16)];
+        if (c.crankRevs != null) {
+          parts.push('クランク累積 ' + c.crankRevs + ' 回 / 時刻 ' + c.crankTime);
+          var cr = state.trk.cscCrank.update(c.crankRevs, c.crankTime, now);
+          if (cr !== null) { setVal('csc', 'cadence', cr * 60); parts.push('→ ケイデンス ' + (cr * 60).toFixed(1) + ' rpm'); }
+          else parts.push('→ ケイデンス 計算待ち');
+        }
+        if (c.wheelRevs != null) {
+          parts.push('ホイール累積 ' + c.wheelRevs + ' 回 / 時刻 ' + c.wheelTime);
+          var wr = state.trk.cscWheel.update(c.wheelRevs, c.wheelTime, now);
+          if (wr !== null) {
+            var circ = parseFloat($('circ').value) || 2096;
+            var kmh = wr * circ / 1000 * 3.6;
+            setVal('csc', 'speed', kmh);
+            parts.push('→ 速度 ' + kmh.toFixed(2) + ' km/h (周長 ' + circ + ' mm 仮定)');
+          } else parts.push('→ 速度 計算待ち');
+        }
+        if (c.leftoverBytes) parts.push('未解析の余り ' + c.leftoverBytes + ' バイト');
+        text = parts.join(' / ');
+      } else if (info.short === '2a63') {
+        var p = parsePower(dv);
+        var pp = ['flags=0x' + p.flags.toString(16), 'パワー ' + p.powerW + ' W'];
+        setVal('cpwr', 'power', p.powerW);
+        if (p.crankRevs != null) {
+          pp.push('クランク累積 ' + p.crankRevs + ' 回 / 時刻 ' + p.crankTime);
+          var pc = state.trk.pwrCrank.update(p.crankRevs, p.crankTime, now);
+          if (pc !== null) { setVal('cpwr', 'cadence', pc * 60); pp.push('→ ケイデンス ' + (pc * 60).toFixed(1) + ' rpm'); }
+          else pp.push('→ ケイデンス 計算待ち');
+        }
+        if (p.wheelRevs != null) pp.push('ホイール累積 ' + p.wheelRevs + ' 回 / 時刻 ' + p.wheelTime + '(未使用)');
+        text = pp.join(' / ');
+      } else if (info.short === '2a37') {
+        var h = parseHeartRate(dv);
+        setVal('hr', 'bpm', h.bpm);
+        text = '心拍 ' + h.bpm + ' bpm';
+      } else {
+        text = '(解析対象外の characteristic)';
+      }
+    } catch (e) {
+      text = '解析失敗: ' + errText(e);
+    }
+    log(info.short, info.lastHex + '  | ' + text);
+    updateRow(info);
+    queueRender();
+  }
+
+  // ---------- 接続 ----------
+  function supportProblem() {
+    if (!window.isSecureContext) return 'insecure';
+    if (!navigator.bluetooth) return 'nobluetooth';
+    return null;
+  }
+  function showUnsupported(kind) {
+    var box = $('unsupported');
+    box.hidden = false;
+    var body = $('unsupportedBody');
+    body.textContent = '';
+    if (kind === 'insecure') {
+      $('unsupportedTitle').textContent = 'HTTPS で開いてください';
+      body.textContent = 'Bluetooth は https:// のページでしか使えません。公開 URL(https:// で始まるもの)を Bluefy で開いてください。';
+    } else {
+      $('unsupportedTitle').textContent = 'Bluefy で開いてください';
+      var p1 = document.createElement('p');
+      p1.textContent = 'この iPad の Safari などは Web Bluetooth に対応していません。App Store の無料アプリ「Bluefy – Web BLE Browser」をインストールし、その中でこのページを開いてください。';
+      var p2 = document.createElement('p');
+      p2.appendChild(document.createTextNode('このページのアドレス: '));
+      var code = document.createElement('code'); code.textContent = location.href;
+      p2.appendChild(code);
+      body.appendChild(p1); body.appendChild(p2);
+    }
+    $('btnConnect').disabled = true;
+  }
+
+  function releaseWakeLock() {
+    try { if (state.wakeLock) { state.wakeLock.release(); } } catch (e) { /* 無視 */ }
+    state.wakeLock = null;
+  }
+  function requestWakeLock() {
+    // 画面が消えると接続が切れやすいので、使えるなら画面点灯を維持する(失敗しても無視)
+    try {
+      if (navigator.wakeLock && navigator.wakeLock.request) {
+        navigator.wakeLock.request('screen').then(function (l) { state.wakeLock = l; }, function () { /* 無視 */ });
+      }
+    } catch (e) { /* 無視 */ }
+  }
+
+  function requestDevice() {
+    var base = { acceptAllDevices: true };
+    return navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: REQUIRED_SERVICES.concat(EXTRA_SERVICES) })
+      .catch(function (e) {
+        // 追加 UUID が原因で型エラー/セキュリティエラーになる環境への保険(ユーザーのキャンセルは再試行しない)
+        if (e && (e.name === 'TypeError' || e.name === 'SecurityError')) {
+          log('接続', '追加サービス指定で失敗 (' + errText(e) + ')。必須 5 種のみで再試行します');
+          base.optionalServices = REQUIRED_SERVICES;
+          return navigator.bluetooth.requestDevice(base);
+        }
+        throw e;
+      });
+  }
+
+  function onPick() {
+    if (supportProblem()) { showUnsupported(supportProblem()); return; }
+    if (state.device && state.device.gatt && state.device.gatt.connected) {
+      state.manualDisconnect = true;
+      state.device.gatt.disconnect();
+    }
+    setStatus('connecting', 'デバイスを選んでください…');
+    log('接続', 'requestDevice を呼びます');
+    requestDevice().then(function (device) {
+      if (state.device) state.device.removeEventListener('gattserverdisconnected', onDisconnected);
+      state.device = device;
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+      log('接続', '選択: ' + (device.name || '(名前なし)') + ' id=' + device.id);
+      return connectAndSubscribe();
+    }).catch(function (e) {
+      if (e && e.name === 'NotFoundError') {
+        log('接続', 'デバイス選択がキャンセルされました (' + errText(e) + ')');
+        setStatus(state.device ? 'disconnected' : 'idle', state.device ? '切断中: ' + (state.device.name || '(名前なし)') : '未接続(選択がキャンセルされました)');
+      } else {
+        log('エラー', errText(e));
+        setStatus(state.device ? 'disconnected' : 'idle', '接続に失敗しました: ' + errText(e));
+      }
+    });
+  }
+
+  function connectAndSubscribe() {
+    var device = state.device;
+    var label = device.name || '(名前なし)';
+    state.manualDisconnect = false;
+    resetParserState();
+    setStatus('connecting', '接続中: ' + label);
+    return withTimeout(device.gatt.connect(), 20000, 'GATT 接続').then(function (server) {
+      log('接続', 'GATT 接続 OK。サービスを検索します');
+      return withTimeout(server.getPrimaryServices(), 20000, 'サービス検索');
+    }).then(function (services) {
+      return discover(services);
+    }).then(function () {
+      if (!device.gatt.connected) throw new Error('接続が途中で切れました');
+      setStatus('connected', '接続中: ' + label);
+      requestWakeLock();
+      log('接続', '準備完了。ペダルを漕いでください');
+    }).catch(function (e) {
+      log('エラー', errText(e));
+      if (device.gatt && device.gatt.connected) {
+        // 接続はできたが途中で失敗した場合は、取れた分は見せたまま状態だけ表示する
+        setStatus('connected', '接続中(一部失敗): ' + label + ' — ' + errText(e));
+      } else {
+        setStatus('disconnected', '接続に失敗しました: ' + errText(e));
+      }
+    });
+  }
+
+  // 各サービスの characteristic を列挙 → 通知を購読 → 読めるものを読む(すべて順番に実行)
+  function discover(services) {
+    state.chars.clear();
+    renderChars();
+    var chain = Promise.resolve();
+    if (!services.length) {
+      log('検索', 'サービスが 1 つも返りませんでした(指定した UUID に該当するものが無い可能性)');
+    }
+    services.forEach(function (svc) {
+      chain = chain.then(function () {
+        return svc.getCharacteristics().then(function (chars) {
+          chars.forEach(function (ch) {
+            var pr = ch.properties, props = [];
+            ['broadcast', 'read', 'writeWithoutResponse', 'write', 'notify', 'indicate'].forEach(function (k) { if (pr[k]) props.push(k); });
+            var info = {
+              svcUuid: svc.uuid, uuid: ch.uuid, short: shortUuid(ch.uuid), ch: ch, props: props,
+              count: 0, lastHex: '', readHex: '', readText: '', note: '', subscribed: false
+            };
+            state.chars.set(svc.uuid + '/' + ch.uuid, info);
+          });
+          log('検索', 'サービス ' + shortUuid(svc.uuid) + ': characteristic ' + chars.length + ' 個 [' + chars.map(function (c) { return shortUuid(c.uuid); }).join(', ') + ']');
+        }).catch(function (e) {
+          log('エラー', 'サービス ' + shortUuid(svc.uuid) + ' の characteristic 取得に失敗: ' + errText(e));
+        });
+      });
+    });
+    chain = chain.then(function () { renderChars(); });
+
+    // 通知の購読
+    chain = chain.then(function () {
+      var seq = Promise.resolve();
+      state.chars.forEach(function (info) {
+        if (!(info.ch.properties.notify || info.ch.properties.indicate)) return;
+        seq = seq.then(function () {
+          if (!state.device.gatt.connected) return;
+          info.ch.addEventListener('characteristicvaluechanged', function (ev) { handleValue(info, ev.target.value); });
+          return withTimeout(info.ch.startNotifications(), 10000, info.short + ' の通知購読').then(function () {
+            info.subscribed = true;
+            log('購読', info.short + ' ' + (CHAR_NAMES[info.short] || '') + ' の通知を開始');
+          }, function (e) {
+            info.note = '購読失敗';
+            log('エラー', info.short + ' の通知購読に失敗: ' + errText(e));
+          }).then(function () { updateRow(info); });
+        });
+      });
+      return seq;
+    });
+
+    // 読み取り(Device Information や Feature など)。値を書き込むことはしない。
+    chain = chain.then(function () {
+      var seq = Promise.resolve();
+      state.chars.forEach(function (info) {
+        if (!info.ch.properties.read) return;
+        seq = seq.then(function () {
+          if (!state.device.gatt.connected) return;
+          return withTimeout(info.ch.readValue(), 8000, info.short + ' の読み取り').then(function (dv) {
+            info.readHex = hex(dv);
+            info.readText = asciiOrNull(dv) || '';
+            log('読取', info.short + ' ' + (CHAR_NAMES[info.short] || '') + ': ' + info.readHex + (info.readText ? '  「' + info.readText + '」' : ''));
+          }, function (e) {
+            log('エラー', info.short + ' の読み取りに失敗: ' + errText(e));
+          }).then(function () { updateRow(info); });
+        });
+      });
+      return seq;
+    });
+    return chain;
+  }
+
+  function onDisconnected() {
+    var label = state.device && state.device.name ? state.device.name : '(名前なし)';
+    releaseWakeLock();
+    state.chars.forEach(function (info) { info.subscribed = false; updateRow(info); });
+    if (state.manualDisconnect) {
+      log('接続', '切断しました');
+      setStatus('disconnected', '切断しました: ' + label);
+    } else {
+      log('接続', '接続が切れました(バイクが離れた/電源が切れた/他のアプリが接続した可能性)');
+      setStatus('disconnected', '接続が切れました: ' + label);
+    }
+  }
+
+  function onDisconnectClick() {
+    if (state.device && state.device.gatt && state.device.gatt.connected) {
+      state.manualDisconnect = true;
+      state.device.gatt.disconnect();
+    } else {
+      onDisconnected();
+    }
+  }
+  function onReconnectClick() {
+    if (!state.device) { onPick(); return; }
+    log('接続', '再接続します');
+    connectAndSubscribe();
+  }
+
+  // ---------- コピー ----------
+  function buildReport() {
+    var L = [];
+    L.push('# ペダルリズム 接続テスト ログ');
+    L.push('時刻: ' + new Date().toString());
+    L.push('UA: ' + navigator.userAgent);
+    L.push('デバイス名: ' + (state.device ? (state.device.name || '(名前なし)') : '(未選択)'));
+    L.push('');
+    L.push('## サービス / characteristic');
+    var lastSvc = null;
+    state.chars.forEach(function (info) {
+      if (info.svcUuid !== lastSvc) {
+        lastSvc = info.svcUuid;
+        L.push('サービス ' + shortUuid(info.svcUuid) + (SERVICE_NAMES[shortUuid(info.svcUuid)] ? ' ' + SERVICE_NAMES[shortUuid(info.svcUuid)] : ''));
+      }
+      L.push('  ' + info.short + (CHAR_NAMES[info.short] ? ' ' + CHAR_NAMES[info.short] : '') + ' [' + info.props.join(',') + ']' +
+        (info.subscribed ? ' 購読中 ' + info.count + ' 回' : '') + (info.note ? ' ' + info.note : '') +
+        (info.lastHex ? ' 最新: ' + info.lastHex : '') + (info.readHex ? ' 読取: ' + info.readHex + (info.readText ? ' 「' + info.readText + '」' : '') : ''));
+    });
+    L.push('');
+    L.push('## ログ(新しい順)');
+    return L.join('\n') + '\n' + state.logs.join('\n') + '\n';
+  }
+  function copyLog() {
+    var text = buildReport();
+    var btn = $('btnCopy');
+    var done = function (msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = 'ログをコピー'; }, 2000); };
+    var fallback = function () {
+      var ta = $('log');
+      try {
+        var saved = ta.value;
+        ta.value = text; ta.select(); ta.setSelectionRange(0, text.length);
+        var ok = document.execCommand('copy');
+        ta.value = saved;
+        done(ok ? 'コピーしました' : 'コピーできませんでした');
+      } catch (e) { done('コピーできませんでした'); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done('コピーしました'); }, fallback);
+    } else { fallback(); }
+  }
+
+  // ---------- 初期化 ----------
+  $('logMax').textContent = LOG_MAX;
+  $('btnConnect').addEventListener('click', onPick);
+  $('btnPick').addEventListener('click', onPick);
+  $('btnDisconnect').addEventListener('click', onDisconnectClick);
+  $('btnReconnect').addEventListener('click', onReconnectClick);
+  $('btnCopy').addEventListener('click', copyLog);
+  $('btnClear').addEventListener('click', function () { state.logs = []; $('log').value = ''; });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && state.phase === 'connected') requestWakeLock();
+  });
+  window.addEventListener('error', function (ev) { log('エラー', 'スクリプトエラー: ' + ev.message); });
+  window.addEventListener('unhandledrejection', function (ev) { log('エラー', '未処理の失敗: ' + errText(ev.reason)); });
+
+  var problem = supportProblem();
+  if (problem) { showUnsupported(problem); log('起動', 'Web Bluetooth を使えません (' + problem + ')'); }
+  else { log('起動', 'Web Bluetooth を利用できます。「バイクに接続」を押してください'); }
+  setStatus('idle', '未接続');
+  if (problem) $('btnConnect').disabled = true;
+  render();
+
+  // 動作確認用(画面の動作には使わない)
+  window.__pedalRhythm = {
+    parseFtmsIndoorBike: parseFtmsIndoorBike, parseCsc: parseCsc, parsePower: parsePower,
+    parseHeartRate: parseHeartRate, RevTracker: RevTracker
+  };
+})();
+</script>
+</body>
+</html>
