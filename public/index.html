@@ -200,6 +200,15 @@
   <h2>見つかったサービスと characteristic</h2>
   <div id="chars" class="chars"><div class="empty">まだ接続していません。</div></div>
 
+  <h2>つながらないときの試験</h2>
+  <p class="lead">「バイクに接続」で選択画面が出ないときだけ使います。上から順に押して、選択画面が出たかどうかと、下のログを送ってください。</p>
+  <div class="buttons">
+    <button id="btnTestA" type="button" class="small secondary">試験A: すべての機器(サービス指定なし)</button>
+    <button id="btnTestB" type="button" class="small secondary">試験B: 名前が Smart で始まる機器</button>
+    <button id="btnTestC" type="button" class="small secondary">試験C: FTMS を持つ機器</button>
+    <button id="btnTestD" type="button" class="small secondary">試験D: 前の版と同じ指定</button>
+  </div>
+
   <h2>生データのログ(新しい順・最新 <span id="logMax"></span> 件)</h2>
   <div class="buttons">
     <button id="btnCopy" type="button" class="small">ログをコピー</button>
@@ -224,6 +233,8 @@
   var REQUIRED_SERVICES = [0x1826, 0x1816, 0x1818, 0x180d, 0x180a];
   var EXTRA_SERVICES = [0x1800, 0x1801, 0x180f, 0xfff0, 0xffe0]; // 独自サービスの手がかり探し用
   var BASE_SUFFIX = '-0000-1000-8000-00805f9b34fb';
+  var REQ_UUIDS = REQUIRED_SERVICES.map(uuid16);
+  var EXTRA_UUIDS = EXTRA_SERVICES.map(uuid16);
 
   var SERVICE_NAMES = {
     '1800': 'Generic Access', '1801': 'Generic Attribute', '180a': 'Device Information',
@@ -275,7 +286,16 @@
     var timer = new Promise(function (_, rej) { t = setTimeout(function () { rej(new Error(label + ' がタイムアウトしました')); }, ms); });
     return Promise.race([p, timer]).then(function (v) { clearTimeout(t); return v; }, function (e) { clearTimeout(t); throw e; });
   }
-  function errText(e) { return (e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : String(e)); }
+  function errText(e) {
+    if (e && typeof e === 'object' && (e.name || e.message)) {
+      return (e.name ? e.name + ': ' : '') + (e.message || '');
+    }
+    // Error 以外の値(数値や文字列)で失敗が返ってきた場合も、中身が分かるように出す
+    var s;
+    try { s = JSON.stringify(e); } catch (x) { s = String(e); }
+    return '(Error ではない値: ' + typeof e + ' ' + s + ')';
+  }
+  function uuid16(n) { return '0000' + pad(n.toString(16), 4) + BASE_SUFFIX; }
 
   // ---------- バイト列リーダ(長さが足りなければ例外) ----------
   function Reader(dv) { this.dv = dv; this.o = 0; }
@@ -637,29 +657,44 @@
     } catch (e) { /* 無視 */ }
   }
 
+  function isCancel(e) { return !!(e && e.name === 'NotFoundError'); }
+  function callRequestDevice(opts) {
+    log('接続', 'requestDevice を呼びます: ' + JSON.stringify(opts));
+    return navigator.bluetooth.requestDevice(opts);
+  }
+  // 通常の「バイクに接続」。UUID は数値ではなく 128 ビットの文字列で渡す(対応ブラウザが一番広い書き方)。
   function requestDevice() {
-    var base = { acceptAllDevices: true };
-    return navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: REQUIRED_SERVICES.concat(EXTRA_SERVICES) })
+    return callRequestDevice({ acceptAllDevices: true, optionalServices: REQ_UUIDS.concat(EXTRA_UUIDS) })
       .catch(function (e) {
-        // 追加 UUID が原因で型エラー/セキュリティエラーになる環境への保険(ユーザーのキャンセルは再試行しない)
-        if (e && (e.name === 'TypeError' || e.name === 'SecurityError')) {
-          log('接続', '追加サービス指定で失敗 (' + errText(e) + ')。必須 5 種のみで再試行します');
-          base.optionalServices = REQUIRED_SERVICES;
-          return navigator.bluetooth.requestDevice(base);
-        }
-        throw e;
+        // ユーザーのキャンセル以外で失敗したら、必須 5 種だけでもう一度試す
+        if (isCancel(e)) throw e;
+        log('エラー', '1 回目失敗: ' + errText(e) + '。必須 5 種のみで再試行します');
+        return callRequestDevice({ acceptAllDevices: true, optionalServices: REQ_UUIDS });
       });
   }
+  // つながらないときの試験。どの指定方法なら選択画面が出るかを調べる。
+  var TESTS = {
+    A: function () { return { acceptAllDevices: true }; },
+    B: function () { return { filters: [{ namePrefix: 'Smart' }], optionalServices: REQ_UUIDS.concat(EXTRA_UUIDS) }; },
+    C: function () { return { filters: [{ services: [uuid16(0x1826)] }], optionalServices: REQ_UUIDS.concat(EXTRA_UUIDS) }; },
+    D: function () { return { acceptAllDevices: true, optionalServices: REQUIRED_SERVICES.concat(EXTRA_SERVICES) }; }
+  };
 
-  function onPick() {
+  function onPick(testKey) {
     if (supportProblem()) { showUnsupported(supportProblem()); return; }
     if (state.device && state.device.gatt && state.device.gatt.connected) {
       state.manualDisconnect = true;
       state.device.gatt.disconnect();
     }
     setStatus('connecting', 'デバイスを選んでください…');
-    log('接続', 'requestDevice を呼びます');
-    requestDevice().then(function (device) {
+    var p;
+    if (testKey) {
+      log('試験', '試験' + testKey + ' を開始');
+      p = callRequestDevice(TESTS[testKey]());
+    } else {
+      p = requestDevice();
+    }
+    p.then(function (device) {
       if (state.device) state.device.removeEventListener('gattserverdisconnected', onDisconnected);
       state.device = device;
       device.addEventListener('gattserverdisconnected', onDisconnected);
@@ -843,8 +878,11 @@
 
   // ---------- 初期化 ----------
   $('logMax').textContent = LOG_MAX;
-  $('btnConnect').addEventListener('click', onPick);
-  $('btnPick').addEventListener('click', onPick);
+  $('btnConnect').addEventListener('click', function () { onPick(); });
+  $('btnPick').addEventListener('click', function () { onPick(); });
+  ['A', 'B', 'C', 'D'].forEach(function (k) {
+    $('btnTest' + k).addEventListener('click', function () { onPick(k); });
+  });
   $('btnDisconnect').addEventListener('click', onDisconnectClick);
   $('btnReconnect').addEventListener('click', onReconnectClick);
   $('btnCopy').addEventListener('click', copyLog);
