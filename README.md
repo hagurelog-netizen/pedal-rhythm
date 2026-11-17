@@ -79,7 +79,9 @@ iPad の Safari は Web Bluetooth に対応していません。App Store の無
 ## ファイル構成
 
 - `public/index.html` … 接続テストページ本体(素の HTML/JS、ビルド不要)
-- `public/game/index.html` … ゲーム本体(宇宙採掘。素の HTML/JS、絵はプログラムで描画)
+- `public/game/index.html` … ゲーム本体(宇宙採掘。素の HTML/JS)
+- `public/game/assets/` … ゲームの絵。決まった名前の画像を置くと、コードで描いた絵の代わりに使われる
+- `docs/art/BRIEF.md` … 絵の制作依頼(画像生成で作る画像の一覧と条件)
 - `.github/workflows/pages.yml` … `main` への push で `public/` を GitHub Pages に公開する
 
 ## パソコンで中身を確認するとき(開発者向け)

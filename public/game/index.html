@@ -938,6 +938,67 @@
     SPR.rock.comet = [genRockSprite('comet', 4242)];
     SPR.far = genRockSprite('far', 99);
     SPR.shard = genRockSprite('far', 314);
+    SPR.built = true;
+    applyArt();
+  }
+
+  // ================= 絵の差し替え =================
+  // public/game/assets/ に決まった名前の画像を置くと、コードで描いた絵の代わりに使う(無ければ今まで通り)
+  var ART = { rock: { ice: [], iron: [], crystal: [], comet: [] }, ship: null, far: null, debris: null, bg: null, baseBg: null, station: [] };
+  // 絵の部分だけを切り出して、正方形の中央に同じ大きさでそろえる。背景が透明でない単色なら、外側からつながる部分を抜く
+  function normalizeSprite(im, N, fill) {
+    var w = im.naturalWidth, h = im.naturalHeight; if (!w || !h) return null;
+    var sc = Math.min(1, 768 / Math.max(w, h)), cw = Math.max(1, Math.round(w * sc)), ch = Math.max(1, Math.round(h * sc));
+    var c = mk(cw, ch), g = c.getContext('2d'); g.drawImage(im, 0, 0, cw, ch);
+    var d = g.getImageData(0, 0, cw, ch), p = d.data, x, y;
+    var cs = [0, cw - 1, (ch - 1) * cw, ch * cw - 1];
+    if (cs.every(function (o) { return p[o * 4 + 3] > 250; })) {
+      var k = [0, 0, 0]; cs.forEach(function (o) { k[0] += p[o * 4] / 4; k[1] += p[o * 4 + 1] / 4; k[2] += p[o * 4 + 2] / 4; });
+      var dist = function (o) { return Math.abs(p[o * 4] - k[0]) + Math.abs(p[o * 4 + 1] - k[1]) + Math.abs(p[o * 4 + 2] - k[2]); };
+      if (cs.every(function (o) { return dist(o) < 45; })) {
+        var seen = new Uint8Array(cw * ch), stack = [];
+        for (x = 0; x < cw; x++) stack.push(x, (ch - 1) * cw + x);
+        for (y = 0; y < ch; y++) stack.push(y * cw, y * cw + cw - 1);
+        while (stack.length) {
+          var o = stack.pop(); if (seen[o]) continue; seen[o] = 1;
+          var dd = dist(o); if (dd >= 150) continue;
+          p[o * 4 + 3] = dd < 80 ? 0 : Math.round(255 * (dd - 80) / 70);
+          if (dd >= 80) continue; // 半透明のふちからは広げない
+          var ox = o % cw;
+          if (ox > 0) stack.push(o - 1); if (ox < cw - 1) stack.push(o + 1);
+          if (o >= cw) stack.push(o - cw); if (o < cw * (ch - 1)) stack.push(o + cw);
+        }
+        g.putImageData(d, 0, 0);
+      }
+    }
+    var x0 = cw, y0 = ch, x1 = -1, y1 = -1;
+    for (y = 0; y < ch; y++) for (x = 0; x < cw; x++) if (p[(y * cw + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) return null;
+    var bw = x1 - x0 + 1, bh = y1 - y0 + 1, kk = N * fill / Math.max(bw, bh), out = mk(N, N);
+    out.getContext('2d').drawImage(c, x0, y0, bw, bh, (N - bw * kk) / 2, (N - bh * kk) / 2, bw * kk, bh * kk);
+    return out;
+  }
+  function applyArt() {
+    if (!SPR.built) return;
+    TYPES.concat(['comet']).forEach(function (t) { var a = ART.rock[t].filter(Boolean); if (a.length) SPR.rock[t] = a; });
+    if (ART.far) SPR.far = ART.far;
+    if (ART.debris) SPR.shard = ART.debris;
+  }
+  function loadArt() {
+    function img(name, ok) { var im = new Image(); im.onload = function () { try { ok(im); } catch (e) { /* 使えない画像は無視して、コードの絵のまま */ } }; im.src = 'assets/' + name; }
+    function sprite(name, N, fill, set) { img(name, function (im) { var c = normalizeSprite(im, N, fill); if (!c) return; set(c); applyArt(); if (!$('home').hidden) renderHome(); }); }
+    TYPES.forEach(function (t) { [1, 2, 3].forEach(function (v) { sprite('rock_' + t + '_' + v + '.png', 384, 0.88, function (c) { ART.rock[t][v - 1] = c; }); }); });
+    sprite('comet.png', 384, 0.88, function (c) { ART.rock.comet[0] = c; });
+    sprite('ship.png', 384, 0.92, function (c) { ART.ship = c; });
+    sprite('far.png', 384, 0.88, function (c) { ART.far = c; });
+    sprite('debris.png', 256, 0.88, function (c) { ART.debris = c; });
+    [1, 2, 3, 4, 5].forEach(function (v) { sprite('station_' + v + '.png', 640, 0.96, function (c) { ART.station[v - 1] = c; }); });
+    img('bg.jpg', function (im) { ART.bg = im; if (!$('play').hidden) buildBackground(); });
+    img('base_bg.jpg', function (im) { ART.baseBg = im; if (!$('home').hidden) renderHome(); });
+  }
+  function drawCover(g, im, w, h) {
+    var k = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k;
+    g.drawImage(im, (w - iw) / 2, (h - ih) / 2, iw, ih);
   }
 
   // ================= 画面の寸法 =================
@@ -959,6 +1020,13 @@
     var w = Math.max(1, Math.round(W)), h = Math.max(1, Math.round(H));
     BG = mk(w, h);
     var g = BG.getContext('2d'), rf = mulberry(20261117), i;
+    if (ART.bg) { // 背景の絵があれば、それを画面いっぱいに敷いて、ふちだけ少し暗くする
+      drawCover(g, ART.bg, w, h);
+      var ag = g.createRadialGradient(w / 2, h * 0.5, h * 0.3, w / 2, h * 0.5, Math.max(w, h) * 0.75);
+      ag.addColorStop(0, 'rgba(0,0,8,0.12)'); ag.addColorStop(1, 'rgba(0,0,8,0.6)');
+      g.fillStyle = ag; g.fillRect(0, 0, w, h);
+      return;
+    }
     var lg = g.createLinearGradient(0, 0, 0, h); lg.addColorStop(0, '#04050f'); lg.addColorStop(0.5, '#080b20'); lg.addColorStop(1, '#05060f');
     g.fillStyle = lg; g.fillRect(0, 0, w, h);
     g.globalCompositeOperation = 'lighter';
@@ -1072,13 +1140,20 @@
     if (!dead) { // エンジンの炎
       g.globalCompositeOperation = 'lighter';
       var hot = heat > 75, fc = hot ? '#ff8a3c' : '#6fd8ff';
-      [[-0.98, 0.95, 0.8], [0.98, 0.95, 0.8], [0, 1.02, 1]].forEach(function (e, i) {
-        var L = r * flame * e[2] * (0.82 + 0.18 * Math.sin(phase * 6.2832 + i)), ex = e[0] * r, ey = e[1] * r, w = r * 0.2;
+      (ART.ship ? [[-0.3, 0.92, 0.85, 0.2], [0.3, 0.92, 0.85, 0.2], [0, 0.96, 1.1, 0.26]] : [[-0.98, 0.95, 0.8, 0.2], [0.98, 0.95, 0.8, 0.2], [0, 1.02, 1, 0.2]]).forEach(function (e, i) {
+        var L = r * flame * e[2] * (0.82 + 0.18 * Math.sin(phase * 6.2832 + i)), ex = e[0] * r, ey = e[1] * r, w = r * e[3];
         var fg = g.createLinearGradient(0, ey, 0, ey + L); fg.addColorStop(0, 'rgba(255,255,255,0.95)'); fg.addColorStop(0.3, rgba(fc, 0.8)); fg.addColorStop(1, rgba(fc, 0));
         g.fillStyle = fg; g.beginPath(); g.moveTo(ex - w, ey); g.lineTo(ex + w, ey); g.lineTo(ex, ey + L); g.closePath(); g.fill();
         g.drawImage(glow(fc), ex - r * 0.45, ey - r * 0.35, r * 0.9, r * 0.9);
       });
       g.globalCompositeOperation = 'source-over';
+    }
+    if (ART.ship) { // 船の絵がある場合(機首が上。-1.7r 〜 +1.06r に収まるように置く)
+      g.globalAlpha = dead ? 0.5 : 1; g.drawImage(ART.ship, -r * 1.5, -r * 1.82, r * 3, r * 3); g.globalAlpha = 1;
+      if (!dead) { g.globalCompositeOperation = 'lighter'; g.drawImage(glow(accent), -r * 0.4, -r * 2.1, r * 0.8, r * 0.8); g.globalCompositeOperation = 'source-over'; }
+      g.restore();
+      if (heat > 50 && !dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = (heat - 50) / 50 * 0.75; g.drawImage(glow('#ff3a2a'), x - r * 2.2, y - r * 2.2, r * 4.4, r * 4.4); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+      return;
     }
     var body = dead ? ['#4a4e63', '#32364a', '#1e2130'] : ['#c6cee8', '#6a7392', '#2c3148'];
     // 左右のポッドと支柱
@@ -1118,7 +1193,7 @@
     }
     if (type !== 'iron') { g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha * (type === 'ice' ? 0.22 : 0.42); g.drawImage(glow(col), x - rad * 2, y - rad * 2, rad * 4, rad * 4); g.globalAlpha = alpha; g.globalCompositeOperation = 'source-over'; }
     g.translate(x + jx, y + jy); g.rotate(r.rot0 + Math.sin(VT * r.rotV + r.rot0 * 7) * 0.1);
-    g.drawImage(SPR.rock[type][r.variant], -half, -half, size, size);
+    g.drawImage(SPR.rock[type][r.variant % SPR.rock[type].length], -half, -half, size, size);
     if (prog > 0.03) { // ひび
       g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
       r.cracks.forEach(function (pts) {
@@ -1465,6 +1540,16 @@
     c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
     var g = c.getContext('2d'), w = r.width, h = r.height, rf = mulberry(7), i;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var stage = -1, want = [0, 2, 5, 9, 14].filter(function (t) { return level >= t; }).length - 1;
+    for (i = want; i >= 0; i--) if (ART.station[i]) { stage = i; break; }
+    if (ART.baseBg || stage >= 0) { // 拠点の絵がある場合
+      if (ART.baseBg) drawCover(g, ART.baseBg, w, h);
+      else { g.fillStyle = '#05060f'; g.fillRect(0, 0, w, h); if (ART.bg) drawCover(g, ART.bg, w, h); }
+      if (stage >= 0) { var ss = h * 0.92; g.drawImage(ART.station[stage], w * 0.55 - ss / 2, h * 0.47 - ss / 2, ss, ss); }
+      drawShip(g, w * 0.86, h * 0.56, h * 0.07, -0.25, 0.5, 0, ORE.iron.color, false, 0.2);
+      if (stage >= 0) return;
+    }
+    if (!ART.baseBg) {
     var lg = g.createLinearGradient(0, 0, w, h); lg.addColorStop(0, '#04050f'); lg.addColorStop(1, '#0b0d24'); g.fillStyle = lg; g.fillRect(0, 0, w, h);
     g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.3;
     g.drawImage(glow('#3b1d6e'), w * 0.45, -h * 0.6, w * 0.7, h * 1.8); g.drawImage(glow('#0e4a66'), -w * 0.1, -h * 0.2, w * 0.5, h * 1.4);
@@ -1475,6 +1560,7 @@
     pg.addColorStop(0, '#3fa7a0'); pg.addColorStop(0.6, '#1b4f6a'); pg.addColorStop(1, '#081526');
     g.fillStyle = pg; g.beginPath(); g.arc(pcx, pcy, pr, 0, 6.2832); g.fill();
     g.strokeStyle = 'rgba(160,220,230,0.35)'; g.lineWidth = h * 0.012; g.beginPath(); g.ellipse(pcx, pcy - pr * 0.1, pr * 1.5, pr * 0.28, -0.25, 3.5, 6.0); g.stroke();
+    }
     // 拠点
     var cx = w * 0.55, cy = h * 0.47, u = h * 0.1;
     var slots = [[-2.3, 0, 'mod'], [2.3, 0, 'mod'], [0, -2.0, 'mod'], [0, 2.0, 'mod'], [-4.4, 0, 'solar'], [4.4, 0, 'solar'], [-2.3, -2.0, 'dish'], [2.3, 2.0, 'mod'],
@@ -1505,7 +1591,7 @@
     g.fillStyle = hg; g.beginPath(); g.arc(cx, cy, u * 1.25, 0, 6.2832); g.fill();
     g.strokeStyle = '#7fe9ff'; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, u * 0.8, 0, 6.2832); g.stroke();
     g.globalCompositeOperation = 'lighter'; g.drawImage(glow('#ffd166'), cx - u, cy - u, u * 2, u * 2); g.globalCompositeOperation = 'source-over';
-    drawShip(g, w * 0.86, h * 0.56, h * 0.07, -0.25, 0.5, 0, ORE.iron.color, false, 0.2);
+    if (!ART.baseBg) drawShip(g, w * 0.86, h * 0.56, h * 0.07, -0.25, 0.5, 0, ORE.iron.color, false, 0.2);
   }
 
   // ================= 拠点・結果の画面 =================
@@ -1584,7 +1670,7 @@
     audioInit();
     show('play');
     $('manual').hidden = input.mode !== 'manual'; $('knobBtn').hidden = true; $('ctl').hidden = true; $('play').classList.remove('ctl-open');
-    if (!SPR.far) buildSprites();
+    if (!SPR.built) buildSprites();
     fitCanvas();
     newGame(S.prefs.min, S.prefs.level);
     G.shipX = GEO.cx;
@@ -1702,6 +1788,7 @@
 
   setSound(S.prefs.sound);
   renderHome();
+  loadArt();
   if (document.fonts && document.fonts.load) {
     Promise.all(['400 20px "Dela Gothic One"', '900 20px "Big Shoulders Display"', '700 20px "Chakra Petch"', '700 20px "Zen Kaku Gothic New"'].map(function (f) { return document.fonts.load(f, 'あ0A'); }))
       .then(function () { if (!$('home').hidden) renderHome(); }, function () {});
@@ -1711,7 +1798,7 @@
   // 動作確認用(画面の動作には使わない)
   window.__space = {
     get G() { return G; }, get S() { return S; }, setCadence: setCadence, parseIndoorBikeCadence: parseIndoorBikeCadence,
-    laneRaw: laneRaw, laneHyst: laneHyst, buildPhases: buildPhases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
+    get ART() { return ART; }, get SPR() { return SPR; }, laneRaw: laneRaw, laneHyst: laneHyst, buildPhases: buildPhases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
   };
 })();
 </script>
