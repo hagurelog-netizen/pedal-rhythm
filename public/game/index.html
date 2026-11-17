@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ペダルリズム 宇宙採掘</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<style>
+  /* 宇宙採掘(試作版)。iPad 横置きでハンドルに載せる前提。ゲーム画面は暗い宇宙の 1 色に固定。 */
+  :root {
+    --space: #070a1a;
+    --panel: #11162e;
+    --line: #2a3160;
+    --text: #eef1ff;
+    --sub: #9aa3cf;
+    --mid: #ffd166;   /* 基準レーン(採掘) */
+    --high: #ff4fd8;  /* 速いレーン(レア鉱脈) */
+    --low: #4cc9f0;   /* 遅いレーン(退避) */
+    --danger: #ff5d5d;
+    --f-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+    --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    --f-num: "Big Shoulders Display", "Dela Gothic One", sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--space); color: var(--text);
+    font-family: var(--f-body); font-size: 18px; line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+  }
+  [hidden] { display: none !important; }
+  button {
+    font: inherit; font-weight: 700; color: var(--space); background: var(--mid);
+    border: 0; border-radius: 14px; min-height: 60px; padding: 10px 26px; cursor: pointer;
+    touch-action: manipulation;
+  }
+  button.ghost { background: transparent; color: var(--text); border: 2px solid var(--line); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  button:focus-visible { outline: 3px solid var(--low); outline-offset: 2px; }
+
+  /* ---------- スタート / 結果画面 ---------- */
+  .page {
+    min-height: 100%;
+    padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 40px max(20px, env(safe-area-inset-left));
+  }
+  .inner { max-width: 980px; margin: 0 auto; display: grid; gap: 22px; }
+  h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(32px, 5vw, 52px); margin: 0; line-height: 1.15; }
+  h1 small { display: block; font-size: 0.42em; color: var(--mid); letter-spacing: 0.08em; margin-top: 6px; }
+  h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0 0 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .row > button { flex: 1 1 220px; }
+  .muted { color: var(--sub); font-size: 16px; }
+  .menus { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .menus button { background: transparent; color: var(--text); border: 2px solid var(--line); min-height: 76px; font-size: 22px; }
+  .menus button[aria-pressed="true"] { background: var(--mid); color: var(--space); border-color: var(--mid); }
+  .menus button span { display: block; font-size: 14px; font-weight: 500; }
+  #btnStart { font-size: 24px; min-height: 76px; width: 100%; }
+  .rules { margin: 0; padding-left: 1.2em; }
+  .rules li + li { margin-top: 4px; }
+  .lane-low { color: var(--low); font-weight: 700; }
+  .lane-mid { color: var(--mid); font-weight: 700; }
+  .lane-high { color: var(--high); font-weight: 700; }
+  .hist { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .hist th, .hist td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .hist-wrap { overflow-x: auto; }
+  #bikeStatus { font-weight: 700; }
+
+  /* ---------- プレイ画面 ---------- */
+  #play { position: fixed; inset: 0; overflow: hidden; background: var(--space); }
+  #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .ctl {
+    position: absolute; z-index: 2; display: flex; gap: 10px;
+    left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
+  }
+  .ctl button { min-height: 48px; padding: 6px 16px; font-size: 16px; background: rgba(17, 22, 46, 0.8); color: var(--text); border: 1.5px solid var(--line); }
+  #knobBtn {
+    position: absolute; z-index: 3;
+    right: max(18px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom));
+    min-height: 110px; min-width: 230px; font-size: 30px; font-family: var(--f-display); font-weight: 400;
+    border-radius: 24px; box-shadow: 0 0 0 6px rgba(255, 209, 102, 0.25), 0 0 40px rgba(255, 209, 102, 0.45);
+  }
+  #knobBtn small { display: block; font-family: var(--f-body); font-size: 15px; font-weight: 700; }
+  #manual {
+    position: absolute; z-index: 2; left: 50%; transform: translateX(-50%);
+    bottom: max(14px, env(safe-area-inset-bottom)); width: min(460px, 46vw);
+    background: rgba(17, 22, 46, 0.85); border: 1.5px solid var(--line); border-radius: 14px; padding: 8px 14px;
+    display: grid; gap: 2px; font-size: 14px; color: var(--sub);
+  }
+  #manual input { width: 100%; height: 36px; accent-color: var(--mid); }
+  #overlay {
+    position: absolute; z-index: 4; inset: 0; display: grid; place-items: center;
+    background: rgba(7, 10, 26, 0.72); padding: 20px;
+  }
+  #overlay .box { max-width: 560px; text-align: center; display: grid; gap: 14px; justify-items: center; }
+  #overlayTitle { font-family: var(--f-display); font-size: clamp(28px, 4.6vw, 44px); line-height: 1.2; }
+  #overlayText { color: var(--sub); }
+
+  /* ---------- 結果 ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+  .tile .k { font-size: 14px; color: var(--sub); }
+  .tile .v { font-family: var(--f-num); font-weight: 900; font-size: 44px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .tile .v small { font-family: var(--f-body); font-size: 15px; font-weight: 700; color: var(--sub); margin-left: 4px; }
+  #resultGraph { width: 100%; height: 260px; display: block; }
+  @media (max-width: 700px) {
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .menus { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #knobBtn { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== スタート画面 ===== -->
+<div id="start" class="page">
+  <div class="inner">
+    <h1>ペダルリズム<small>宇宙採掘 ― 試作版</small></h1>
+
+    <div class="card">
+      <h2>1. 入力を選ぶ</h2>
+      <div class="row">
+        <button id="btnBike" type="button">バイクに接続</button>
+        <button id="btnManual" type="button" class="ghost">バイクなしで試す(スライダー)</button>
+      </div>
+      <p class="muted" id="bikeStatus">まだ選んでいません。</p>
+    </div>
+
+    <div class="card">
+      <h2>2. メニューを選ぶ</h2>
+      <div class="menus" role="group" aria-label="メニュー">
+        <button type="button" data-min="15" aria-pressed="false">15 分<span>軽め</span></button>
+        <button type="button" data-min="20" aria-pressed="true">20 分<span>ふつう</span></button>
+        <button type="button" data-min="30" aria-pressed="false">30 分<span>しっかり</span></button>
+      </div>
+    </div>
+
+    <button id="btnStart" type="button" disabled>出航する</button>
+
+    <div class="card">
+      <h2>遊び方</h2>
+      <ul class="rules">
+        <li>漕ぐ速さで、採掘船のレーンが変わります。<span class="lane-low">遅い</span> / <span class="lane-mid">基準</span> / <span class="lane-high">速い</span> の 3 本です。</li>
+        <li><span class="lane-mid">基準レーン</span>(目標 ±5 rpm)にいる間、鉱石が少しずつ貯まります。</li>
+        <li>ときどき<span class="lane-high">レア鉱脈</span>が来ます。速いレーンで掘ると大量に取れますが、エンジンの熱が上がります。熱が満タンになると 6 秒止まります。どこで戻るかの勝負です。</li>
+        <li>ときどき<span class="lane-low">隕石群</span>が来ます。遅いレーンに逃げてよけてください(ひと休みにもなります)。</li>
+        <li>何も来ていないときに基準レーンから 3 秒以上外れると、コンボが切れます。コンボが続くほど、鉱石の量と音楽が増えます。</li>
+        <li>区間の始めに「ノブを回してみよう」と出ます。回したら右下の「回した!」を押すと、その区間のドリルが強化されます。</li>
+        <li>漕ぐのをやめると自動で一時停止します。</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>これまでの記録</h2>
+      <div class="hist-wrap"><table class="hist" id="hist"></table></div>
+      <p class="muted" id="histNote"></p>
+    </div>
+
+    <p class="muted">これは試作版です。数字の調整はまだ大ざっぱです。記録はこの iPad(ブラウザ)の中にだけ保存されます。<a href="../" style="color: var(--low);">接続テストのページ</a></p>
+  </div>
+</div>
+
+<!-- ===== プレイ画面 ===== -->
+<div id="play" hidden>
+  <canvas id="cv" role="img" aria-label="採掘画面"></canvas>
+  <div class="ctl">
+    <button id="btnPause" type="button">一時停止</button>
+    <button id="btnSound" type="button" aria-pressed="true">音 オン</button>
+    <button id="btnQuit" type="button">やめる</button>
+  </div>
+  <div id="manual" hidden>
+    <label for="manualRange">仮のケイデンス: <b id="manualVal">0</b> rpm(↑↓キーでも変えられます)</label>
+    <input id="manualRange" type="range" min="0" max="130" step="1" value="0">
+  </div>
+  <button id="knobBtn" type="button" hidden>回した!<small id="knobSub">ノブ +2</small></button>
+  <div id="overlay" hidden>
+    <div class="box">
+      <div id="overlayTitle"></div>
+      <div id="overlayText"></div>
+      <div class="row" id="overlayBtns"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 結果画面 ===== -->
+<div id="result" class="page" hidden>
+  <div class="inner">
+    <h1 id="resultTitle">帰還しました</h1>
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <h2>回転数の記録</h2>
+      <canvas id="resultGraph" role="img" aria-label="回転数の記録グラフ"></canvas>
+      <p class="muted">帯は各区間の目標(±5 rpm)、線はあなたの回転数です。</p>
+    </div>
+    <div class="row">
+      <button id="btnAgain" type="button">もう一度</button>
+      <button id="btnHome" type="button" class="ghost">最初の画面へ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ================= 設定 =================
+  var BAND = 5;              // 目標 ±5 rpm が基準レーン
+  var LOOK = 6;              // 何秒先の物体まで道に見せるか(バイクのデータは約 1 秒遅れなので長め)
+  var HEAT_UP = 9;           // 速いレーンにいる 1 秒あたりの熱
+  var HEAT_DOWN_MID = 7;
+  var HEAT_DOWN_LOW = 12;
+  var STALL_SEC = 6;         // オーバーヒートで止まる秒数
+  var COMBO_GRACE = 3;       // 何秒外れ続けたらコンボが切れるか
+  var STALE_MS = 3500;       // これ以上データが来なければ「届いていない」扱い
+  var PARAMS = new URLSearchParams(location.search);
+  var SPEED = Math.max(0.1, Math.min(60, parseFloat(PARAMS.get('speed')) || 1)); // 動作確認用の早回し
+  var HIST_KEY = 'pedalRhythm.space.history.v1';
+
+  var FTMS = '00001826-0000-1000-8000-00805f9b34fb';
+  var INDOOR_BIKE_DATA = '00002ad2-0000-1000-8000-00805f9b34fb';
+
+  function $(id) { return document.getElementById(id); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function mmss(sec) { sec = Math.max(0, Math.ceil(sec)); var m = Math.floor(sec / 60), s = sec % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
+  function fmt(n) { return Math.floor(n).toLocaleString('ja-JP'); }
+
+  // ================= 入力(バイク / スライダー) =================
+  var input = { mode: null, latest: null, at: 0, device: null, connected: false };
+
+  function setCadence(v) { input.latest = v; input.at = performance.now(); }
+  function cadenceNow() {
+    if (input.latest === null || performance.now() - input.at > STALE_MS / SPEED) return null;
+    return input.latest;
+  }
+
+  function parseIndoorBikeCadence(dv) {
+    if (dv.byteLength < 2) return null;
+    var f = dv.getUint16(0, true), o = 2;
+    if (!(f & 0x0001)) o += 2;      // 瞬間速度
+    if (f & 0x0002) o += 2;         // 平均速度
+    if (!(f & 0x0004)) return null; // ケイデンスなし
+    if (o + 2 > dv.byteLength) return null;
+    return dv.getUint16(o, true) * 0.5;
+  }
+
+  function attachBike() {
+    var dev = input.device;
+    $('bikeStatus').textContent = '接続中: ' + (dev.name || '(名前なし)') + ' …';
+    return dev.gatt.connect().then(function (server) {
+      return server.getPrimaryService(FTMS);
+    }).then(function (svc) {
+      return svc.getCharacteristic(INDOOR_BIKE_DATA);
+    }).then(function (ch) {
+      ch.addEventListener('characteristicvaluechanged', function (ev) {
+        var c = parseIndoorBikeCadence(ev.target.value);
+        if (c !== null) setCadence(c);
+      });
+      return ch.startNotifications();
+    }).then(function () {
+      input.connected = true;
+      $('bikeStatus').textContent = '接続しました: ' + (dev.name || '(名前なし)') + '。メニューを選んで「出航する」を押してください。';
+      $('btnStart').disabled = false;
+      hideOverlayIf('disconnected');
+    });
+  }
+  function connectBike() {
+    if (!navigator.bluetooth) {
+      $('bikeStatus').textContent = 'このブラウザは Bluetooth を使えません。iPad では Bluefy で開いてください(PC なら Chrome か Edge)。';
+      return;
+    }
+    $('bikeStatus').textContent = 'バイク(Smart で始まる名前)を選んでください…';
+    navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: [FTMS] }).then(function (dev) {
+      if (input.device) input.device.removeEventListener('gattserverdisconnected', onBikeLost);
+      input.device = dev; input.mode = 'bike';
+      dev.addEventListener('gattserverdisconnected', onBikeLost);
+      $('manual').hidden = true;
+      return attachBike();
+    }).catch(function (e) {
+      var msg = e && e.name === 'NotFoundError' ? '選択がキャンセルされました。' : '接続できませんでした: ' + ((e && (e.message || e.name)) || String(e));
+      $('bikeStatus').textContent = msg;
+    });
+  }
+  function onBikeLost() {
+    input.connected = false;
+    $('bikeStatus').textContent = '接続が切れました。もう一度「バイクに接続」を押してください。';
+    if (G && G.running && !G.finished) {
+      pauseGame('disconnected');
+    }
+  }
+  function useManual() {
+    input.mode = 'manual';
+    $('manual').hidden = false;
+    $('bikeStatus').textContent = 'スライダーで試します。バイクのデータと同じく、1 秒に 1 回だけ値が届く作りです。';
+    $('btnStart').disabled = false;
+  }
+  // スライダーの値は 1 秒に 1 回だけ届ける(バイクと同じ条件にする)
+  setInterval(function () {
+    if (input.mode === 'manual') setCadence(parseInt($('manualRange').value, 10) || 0);
+  }, 1000 / SPEED);
+  $('manualRange').addEventListener('input', function () { $('manualVal').textContent = this.value; });
+  document.addEventListener('keydown', function (e) {
+    if (input.mode !== 'manual' || $('play').hidden) return;
+    var r = $('manualRange'), v = parseInt(r.value, 10);
+    if (e.key === 'ArrowUp') { r.value = Math.min(130, v + 5); }
+    else if (e.key === 'ArrowDown') { r.value = Math.max(0, v - 5); }
+    else return;
+    e.preventDefault(); $('manualVal').textContent = r.value;
+  });
+
+  // ================= ゲームの中身 =================
+  var G = null;
+
+  function buildPhases(totalSec) {
+    var spec = [
+      { name: 'ウォームアップ', frac: 0.15, target: 65, knob: '軽め(1〜2)' },
+      { name: '採掘 1', frac: 0.30, target: 80, knob: '+2' },
+      { name: '深層採掘', frac: 0.28, target: 75, knob: '+2' },
+      { name: 'ラストスパート', frac: 0.12, target: 85, knob: '-2' },
+      { name: '帰還', frac: 0.15, target: 60, knob: 'いちばん軽く' }
+    ];
+    var t = 0, out = [];
+    spec.forEach(function (s, i) {
+      var dur = i === spec.length - 1 ? totalSec - t : Math.round(totalSec * s.frac);
+      out.push({ name: s.name, target: s.target, knob: s.knob, start: t, dur: dur });
+      t += dur;
+    });
+    return out;
+  }
+  function buildEvents(phases, totalSec) {
+    var ev = [], warmEnd = phases[0].dur, coolStart = phases[phases.length - 1].start;
+    var t = warmEnd + 25 + Math.random() * 20;
+    while (t < coolStart - 20) {
+      var ph = phaseAt(phases, t);
+      var rareP = ph.name === 'ラストスパート' ? 0.8 : 0.58;
+      var type = Math.random() < rareP ? 'rare' : 'meteor';
+      var dur = type === 'rare' ? Math.round(12 + Math.random() * 6) : 8;
+      if (t + dur > coolStart - 5) break;
+      ev.push({ type: type, t: Math.round(t), dur: dur, hit: false, mined: 0 });
+      t += dur + 35 + Math.random() * 30;
+    }
+    return ev;
+  }
+  function phaseAt(phases, t) {
+    for (var i = 0; i < phases.length; i++) if (t < phases[i].start + phases[i].dur) return phases[i];
+    return phases[phases.length - 1];
+  }
+  function phaseIndex(t) {
+    for (var i = 0; i < G.phases.length; i++) if (t < G.phases[i].start + G.phases[i].dur) return i;
+    return G.phases.length - 1;
+  }
+  function eventAt(t) {
+    for (var i = 0; i < G.events.length; i++) { var e = G.events[i]; if (t >= e.t && t < e.t + e.dur) return e; }
+    return null;
+  }
+  function nextEvent(t) {
+    for (var i = 0; i < G.events.length; i++) if (G.events[i].t > t) return G.events[i];
+    return null;
+  }
+  function laneOf(c, target) { return c < target - BAND ? 0 : (c > target + BAND ? 2 : 1); }
+  function comboMult() { return G.combo >= 60 ? 1.5 : (G.combo >= 20 ? 1.2 : 1); }
+  function knobMult() { return G.knobDone[phaseIndex(G.T)] ? 1.2 : 1; }
+
+  function newGame(minutes) {
+    var total = minutes * 60;
+    var phases = buildPhases(total);
+    G = {
+      minutes: minutes, total: total, phases: phases, events: buildEvents(phases, total),
+      T: 0, clock: 0, running: true, paused: true, pauseReason: 'waiting', finished: false,
+      ore: 0, rare: 0, combo: 0, maxCombo: 0, badRun: 0, heat: 0, stallUntil: -1,
+      knobDone: {}, knobAsked: {}, knobShownAt: -99, lastPhase: -1, hits: 0,
+      inBandSec: 0, playSec: 0, cadSum: 0, trace: [], lowRun: 0,
+      toasts: [], flashAt: -99, sparkAt: -99, lastLane: 1, dispC: 0
+    };
+    return G;
+  }
+
+  function toast(text, color, sec) { G.toasts.push({ text: text, color: color || '#eef1ff', at: G.clock, sec: sec || 2.6 }); if (G.toasts.length > 2) G.toasts.shift(); }
+
+  // 1 秒ごとの判定
+  function tick() {
+    var c = cadenceNow();
+    var idx = phaseIndex(G.T), ph = G.phases[idx];
+    if (idx !== G.lastPhase) {
+      G.lastPhase = idx;
+      toast(ph.name + ' ― 目標 ' + ph.target + ' rpm', '#eef1ff', 3);
+      if (ph.knob) { G.knobAsked[idx] = true; G.knobShownAt = G.T; showKnobButton(ph); toast('ノブを ' + ph.knob + ' に回してみよう', '#ffd166', 4); }
+    }
+    if (G.knobAsked[idx] && !G.knobDone[idx] && G.T - G.knobShownAt > 30) hideKnobButton();
+
+    c = c === null ? 0 : c;
+    var lane = laneOf(c, ph.target);
+    var ev = eventAt(G.T);
+    var stalled = G.T < G.stallUntil;
+
+    // 熱
+    if (lane === 2 && !stalled) G.heat += HEAT_UP;
+    else G.heat = Math.max(0, G.heat - (lane === 0 ? HEAT_DOWN_LOW : HEAT_DOWN_MID));
+    if (G.heat >= 100 && !stalled) {
+      G.heat = 100; G.stallUntil = G.T + STALL_SEC; stalled = true;
+      G.combo = 0; G.badRun = 0;
+      toast('オーバーヒート! 6 秒停止', '#ff5d5d', 3); G.flashAt = G.clock;
+    }
+    if (stalled) G.heat = Math.max(0, G.heat - 8);
+
+    // 良い状態かどうか
+    var good;
+    if (ev && ev.type === 'meteor') {
+      good = lane === 0;
+      if (!good && !ev.hit && G.T >= ev.t + 1) { // 最初の 1 秒はデータの遅れぶんの猶予
+        ev.hit = true; G.hits++; G.ore = Math.max(0, G.ore - 15); G.combo = 0; G.badRun = 0;
+        toast('隕石に当たった! 鉱石 -15', '#ff5d5d', 2.6); G.flashAt = G.clock;
+      }
+    } else if (ev && ev.type === 'rare') {
+      good = lane >= 1;
+    } else {
+      good = lane === 1;
+    }
+    if (stalled) good = false;
+
+    // 採掘
+    if (!stalled) {
+      var m = comboMult() * knobMult();
+      if (lane === 1) { G.ore += 1 * m; G.sparkAt = G.clock; }
+      if (lane === 2 && ev && ev.type === 'rare') { G.ore += 4 * m; G.rare += 1; ev.mined++; G.sparkAt = G.clock; }
+    }
+
+    // コンボ
+    if (good) { G.combo++; G.badRun = 0; if (G.combo > G.maxCombo) G.maxCombo = G.combo; }
+    else if (!stalled) {
+      G.badRun++;
+      if (G.badRun >= COMBO_GRACE && G.combo > 0) { G.combo = 0; toast('コンボが切れた', '#9aa3cf', 1.8); }
+    }
+    if (G.combo === 20 || G.combo === 60) toast(G.combo + ' コンボ! 鉱石 ×' + comboMult(), '#ffd166', 2.4);
+
+    if (lane === 1) G.inBandSec++;
+    G.playSec++; G.cadSum += c;
+    G.trace.push([G.T, c]);
+    G.lastLane = lane;
+  }
+
+  // ================= 一時停止 =================
+  var OVERLAY = {
+    waiting: { title: '漕ぎ始めると出航します', text: 'ゆっくりで大丈夫です。' },
+    stopped: { title: '一時停止中', text: '漕ぐと再開します。' },
+    nodata: { title: 'バイクのデータが届いていません', text: 'バイクの電源と接続を確かめてください。データが戻ると再開します。' },
+    disconnected: { title: '接続が切れました', text: '「再接続」を押してください。' },
+    manual: { title: '一時停止中', text: '「再開」を押すと続きから始まります。' }
+  };
+  function pauseGame(reason) {
+    G.paused = true; G.pauseReason = reason;
+    var o = OVERLAY[reason];
+    $('overlayTitle').textContent = o.title; $('overlayText').textContent = o.text;
+    var btns = $('overlayBtns'); btns.textContent = '';
+    if (reason === 'disconnected') {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = '再接続';
+      b.addEventListener('click', function () {
+        if (!input.device) return;
+        attachBike().catch(function (e) { $('overlayText').textContent = '再接続できませんでした: ' + (e && e.message || e); });
+      });
+      btns.appendChild(b);
+    }
+    if (reason === 'manual') {
+      var r = document.createElement('button'); r.type = 'button'; r.textContent = '再開';
+      r.addEventListener('click', function () { resumeGame(); });
+      btns.appendChild(r);
+    }
+    $('overlay').hidden = false;
+    $('btnPause').textContent = '再開';
+  }
+  function hideOverlayIf(reason) {
+    if (G && G.paused && G.pauseReason === reason) {
+      if (reason === 'disconnected') { G.pauseReason = 'stopped'; pauseGame('stopped'); }
+    }
+  }
+  function resumeGame() {
+    G.paused = false; G.pauseReason = '';
+    $('overlay').hidden = true; $('btnPause').textContent = '一時停止';
+    G.lowRun = 0;
+  }
+  // 自動の一時停止と再開(漕ぐのをやめた / データが来ない)
+  function autoPauseCheck() {
+    var c = cadenceNow();
+    if (G.paused) {
+      if (G.pauseReason === 'manual' || G.pauseReason === 'disconnected') return;
+      if (c !== null && c >= 30) resumeGame();
+      else if (G.pauseReason !== 'waiting') {
+        var want = c === null ? 'nodata' : 'stopped';
+        if (want !== G.pauseReason) pauseGame(want);
+      }
+      return;
+    }
+    if (c === null) { pauseGame('nodata'); return; }
+  }
+
+  // ================= ノブのボタン =================
+  function showKnobButton(ph) {
+    $('knobSub').textContent = 'ノブ ' + ph.knob;
+    $('knobBtn').hidden = false;
+  }
+  function hideKnobButton() { $('knobBtn').hidden = true; }
+  $('knobBtn').addEventListener('click', function () {
+    if (!G) return;
+    var idx = phaseIndex(G.T);
+    G.knobDone[idx] = true; hideKnobButton();
+    toast('ドリル強化! この区間は鉱石 ×1.2', '#ffd166', 2.6);
+  });
+
+  // ================= 音(ビートと、コンボで増える楽器) =================
+  var AU = { ctx: null, on: true, nextBeat: 0, beatNo: 0, visualBeats: [], noise: null };
+  function audioInit() {
+    try {
+      if (!AU.ctx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        AU.ctx = new AC();
+        var len = AU.ctx.sampleRate * 0.2, buf = AU.ctx.createBuffer(1, len, AU.ctx.sampleRate), d = buf.getChannelData(0);
+        for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        AU.noise = buf;
+      }
+      if (AU.ctx.state === 'suspended') AU.ctx.resume();
+    } catch (e) { AU.ctx = null; }
+  }
+  function env(g, t, peak, dec) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+  }
+  function voiceKick(t, strong) {
+    var c = AU.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(strong ? 160 : 120, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+    env(g, t, strong ? 0.9 : 0.6, 0.18); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.2);
+    var o2 = c.createOscillator(), g2 = c.createGain();
+    o2.frequency.value = strong ? 1600 : 1100; env(g2, t, 0.12, 0.03); o2.connect(g2); g2.connect(c.destination); o2.start(t); o2.stop(t + 0.05);
+  }
+  function voiceHat(t) {
+    var c = AU.ctx, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = AU.noise; f.type = 'highpass'; f.frequency.value = 7000; env(g, t, 0.25, 0.05);
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start(t); s.stop(t + 0.07);
+  }
+  var BASS = [55, 55, 65.41, 49];       // A1 A1 C2 G1
+  var ARP = [440, 523.25, 659.25, 783.99, 659.25, 523.25];
+  function voiceBass(t, beat, dur) {
+    var c = AU.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+    o.type = 'sawtooth'; o.frequency.value = BASS[Math.floor(beat / 4) % 4];
+    f.type = 'lowpass'; f.frequency.value = 420; env(g, t, 0.28, dur * 0.9);
+    o.connect(f); f.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur);
+  }
+  function voiceArp(t, k) {
+    var c = AU.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = 'triangle'; o.frequency.value = ARP[k % ARP.length]; env(g, t, 0.09, 0.16);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.2);
+  }
+  function audioSchedule() {
+    if (!AU.ctx || !G || G.paused || G.finished) return;
+    var now = AU.ctx.currentTime;
+    if (AU.nextBeat < now) AU.nextBeat = now + 0.05;
+    var ph = G.phases[phaseIndex(G.T)];
+    var period = 60 / ph.target;
+    while (AU.nextBeat < now + 0.12) {
+      var t = AU.nextBeat, b = AU.beatNo;
+      AU.visualBeats.push(t);
+      if (AU.on) {
+        voiceKick(t, b % 4 === 0);
+        var tier = G.combo >= 60 ? 3 : (G.combo >= 30 ? 2 : (G.combo >= 10 ? 1 : 0));
+        if (tier >= 1) voiceHat(t + period / 2);
+        if (tier >= 2 && b % 2 === 0) voiceBass(t, b, period * 1.9);
+        if (tier >= 3) { voiceArp(t, b * 2); voiceArp(t + period / 2, b * 2 + 1); }
+      }
+      AU.nextBeat += period; AU.beatNo++;
+    }
+  }
+  setInterval(audioSchedule, 25);
+
+  // 画面の拍(音が無い環境でも動くように)
+  var VB = { phase: 0, pulseAt: -99, count: 0 };
+  function visualBeat(dt) {
+    if (AU.ctx && AU.visualBeats.length) {
+      var now = AU.ctx.currentTime;
+      while (AU.visualBeats.length && AU.visualBeats[0] <= now) { AU.visualBeats.shift(); VB.pulseAt = G.clock; VB.count++; }
+      return;
+    }
+    if (!G || G.paused) return;
+    var ph = G.phases[phaseIndex(G.T)];
+    VB.phase += dt * ph.target / 60;
+    if (VB.phase >= 1) { VB.phase -= 1; VB.pulseAt = G.clock; VB.count++; }
+  }
+
+  // ================= 描画 =================
+  var cv = $('cv'), ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1;
+  function fitCanvas() {
+    var r = cv.getBoundingClientRect(); DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    cv.width = Math.max(1, Math.round(W * DPR)); cv.height = Math.max(1, Math.round(H * DPR));
+  }
+  window.addEventListener('resize', function () { if (!$('play').hidden) fitCanvas(); });
+
+  var FD = '"Dela Gothic One", "Hiragino Sans", sans-serif';
+  var FB = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif';
+  var FN = '"Big Shoulders Display", "Dela Gothic One", sans-serif';
+  function font(w, size, fam) { ctx.font = w + ' ' + Math.round(size) + 'px ' + fam; }
+  function txt(s, x, y, align, base) { ctx.textAlign = align || 'left'; ctx.textBaseline = base || 'alphabetic'; ctx.fillText(s, x, y); }
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  var STARS = [];
+  for (var si = 0; si < 220; si++) STARS.push({ a: Math.random() * Math.PI * 2, r: Math.random(), s: 0.3 + Math.random() * 0.7 });
+
+  var COL = { low: '#4cc9f0', mid: '#ffd166', high: '#ff4fd8', danger: '#ff5d5d', text: '#eef1ff', sub: '#9aa3cf', space: '#070a1a' };
+  var LANE_COL = [COL.low, COL.mid, COL.high];
+
+  function draw(dt) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    var ph = G.phases[phaseIndex(G.T)];
+    var c = cadenceNow(); var cRaw = c === null ? 0 : c;
+    G.dispC += (cRaw - G.dispC) * Math.min(1, dt * 2.5); // 1 秒ごとの値をなめらかに見せる
+    var Tv = G.T + (G.paused ? 0 : G.clock - Math.floor(G.clock)); // 判定の間の時間も滑らかに
+    var stalled = G.T < G.stallUntil;
+
+    // 背景と星
+    ctx.fillStyle = COL.space; ctx.fillRect(0, 0, W, H);
+    var stripH = H * 0.13, y0 = stripH + (H - stripH) * 0.3, yHit = H * 0.76, cx = W / 2;
+    var speedStars = G.paused ? 0 : (G.dispC / 60);
+    STARS.forEach(function (s) {
+      s.r += dt * 0.25 * speedStars * s.s; if (s.r > 1) s.r -= 1;
+      var rr = Math.pow(s.r, 2) * Math.max(W, H) * 0.75;
+      var x = cx + Math.cos(s.a) * rr, y = y0 + Math.sin(s.a) * rr * 0.75;
+      ctx.fillStyle = 'rgba(220,226,255,' + (0.25 + 0.6 * s.r) + ')';
+      ctx.fillRect(x, y, 1 + s.r * 2, 1 + s.r * 2);
+    });
+    // 小惑星(行き先)
+    var ag = ctx.createRadialGradient(cx - H * 0.02, y0 - H * 0.03, H * 0.01, cx, y0, H * 0.12);
+    ag.addColorStop(0, '#8d7a6a'); ag.addColorStop(1, '#2a2230');
+    ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(cx, y0, H * 0.1, 0, Math.PI * 2); ctx.fill();
+
+    // レーン(遠近)
+    var K = 5, wTop = W * 0.03, wHit = W * 0.34;
+    function sOf(d) { return (1 / (1 + K * d) - 1 / (1 + K)) / (1 - 1 / (1 + K)); }
+    function yOf(s) { return y0 + (yHit - y0) * s; }
+    function hwOf(s) { return wTop + (wHit - wTop) * s; }
+    function xOf(u, s) { return cx + (u / 1.5) * hwOf(s); }
+    var sB = (H - y0) / (yHit - y0);
+    function laneQuad(u0, u1, s0, s1) {
+      ctx.beginPath(); ctx.moveTo(xOf(u0, s0), yOf(s0)); ctx.lineTo(xOf(u1, s0), yOf(s0));
+      ctx.lineTo(xOf(u1, s1), yOf(s1)); ctx.lineTo(xOf(u0, s1), yOf(s1)); ctx.closePath();
+    }
+    var pulse = Math.max(0, 1 - (G.clock - VB.pulseAt) / 0.3);
+    [[-1.5, -0.5, 0], [-0.5, 0.5, 1], [0.5, 1.5, 2]].forEach(function (L) {
+      ctx.fillStyle = L[2] === 0 ? 'rgba(76,201,240,0.07)' : (L[2] === 1 ? 'rgba(255,209,102,' + (0.08 + 0.06 * pulse) + ')' : 'rgba(255,79,216,0.07)');
+      laneQuad(L[0], L[1], 0, sB); ctx.fill();
+    });
+    [-1.5, -0.5, 0.5, 1.5].forEach(function (u, k) {
+      ctx.strokeStyle = k === 0 ? COL.low : (k === 3 ? COL.high : COL.mid);
+      ctx.globalAlpha = 0.55 + 0.4 * pulse; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(xOf(u, 0), y0); ctx.lineTo(xOf(u, sB), H); ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+    // 拍ごとに流れる横線
+    for (var k = 0; k < 6; k++) {
+      var bd = (k + 1 - Math.min(1, (G.clock - VB.pulseAt) * ph.target / 60)) / 6;
+      if (bd <= 0 || bd > 1) continue;
+      var bs = sOf(bd);
+      ctx.strokeStyle = 'rgba(255,209,102,' + (0.08 + 0.3 * bs) + ')'; ctx.lineWidth = 1 + 2 * bs;
+      ctx.beginPath(); ctx.moveTo(xOf(-0.5, bs), yOf(bs)); ctx.lineTo(xOf(0.5, bs), yOf(bs)); ctx.stroke();
+    }
+
+    // 物体(レア鉱脈・隕石群)
+    G.events.forEach(function (e) {
+      var d0 = (e.t - Tv) / LOOK, d1 = (e.t + e.dur - Tv) / LOOK;
+      if (d1 < -0.3 || d0 > 1) return;
+      var s0 = sOf(clamp(d0, -0.3, 1)), s1 = sOf(clamp(d1, -0.3, 1));
+      if (e.type === 'rare') {
+        var g = ctx.createLinearGradient(0, yOf(s1), 0, yOf(s0));
+        g.addColorStop(0, 'rgba(255,79,216,0.15)'); g.addColorStop(1, 'rgba(255,79,216,0.6)');
+        ctx.fillStyle = g; laneQuad(0.55, 1.45, s1, s0); ctx.fill();
+        for (var q = 0; q < 10; q++) {
+          var dq = d0 + (d1 - d0) * (q + 0.5) / 10; if (dq < -0.2 || dq > 1) continue;
+          var sq = sOf(dq), r = 3 + 9 * sq;
+          ctx.fillStyle = '#ffb3f0'; ctx.beginPath();
+          var qx = xOf(1 + ((q * 37) % 7 - 3) * 0.1, sq), qy = yOf(sq);
+          ctx.moveTo(qx, qy - r); ctx.lineTo(qx + r * 0.7, qy); ctx.lineTo(qx, qy + r); ctx.lineTo(qx - r * 0.7, qy); ctx.closePath(); ctx.fill();
+        }
+      } else {
+        ctx.fillStyle = 'rgba(255,93,93,0.18)'; laneQuad(-0.45, 1.45, s1, s0); ctx.fill();
+        for (var m = 0; m < 14; m++) {
+          var dm = d0 + (d1 - d0) * ((m * 0.37) % 1); if (dm < -0.2 || dm > 1) continue;
+          var sm = sOf(dm), rm = 4 + 12 * sm;
+          ctx.fillStyle = '#7a4a3a'; ctx.strokeStyle = '#ff8a6a'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(xOf(-0.3 + ((m * 53) % 17) / 10, sm), yOf(sm), rm, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        }
+      }
+    });
+
+    // ヒットライン
+    ctx.strokeStyle = 'rgba(238,241,255,0.8)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(xOf(-1.5, 1), yHit); ctx.lineTo(xOf(1.5, 1), yHit); ctx.stroke();
+
+    // 採掘船
+    var dev = G.dispC - ph.target;
+    var u = clamp(dev / BAND * 0.5, -1.25, 1.25);
+    var lane = laneOf(G.dispC, ph.target);
+    var sx = xOf(u, 1), sr = H * 0.045 * (1 + 0.15 * pulse);
+    var shipCol = stalled ? '#6b7090' : LANE_COL[lane];
+    ctx.shadowColor = shipCol; ctx.shadowBlur = stalled ? 0 : 26;
+    ctx.fillStyle = shipCol;
+    ctx.beginPath(); ctx.moveTo(sx, yHit - sr * 1.3); ctx.lineTo(sx + sr, yHit + sr * 0.7); ctx.lineTo(sx, yHit + sr * 0.3); ctx.lineTo(sx - sr, yHit + sr * 0.7); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+    if (G.clock - G.sparkAt < 0.35 && !stalled) {
+      ctx.strokeStyle = shipCol; ctx.lineWidth = 2;
+      for (var sp = 0; sp < 6; sp++) {
+        var a = -Math.PI / 2 + (sp - 2.5) * 0.35, l = sr * (1.2 + (G.clock - G.sparkAt) * 4);
+        ctx.beginPath(); ctx.moveTo(sx + Math.cos(a) * sr * 1.3, yHit - sr * 1.3 + Math.sin(a) * 2); ctx.lineTo(sx + Math.cos(a) * l * 1.4, yHit - sr * 1.3 + Math.sin(a) * l); ctx.stroke();
+      }
+    }
+
+    // レーン名と回転数の範囲
+    font('700', H * 0.026, FB);
+    [[-1, '遅い 〜' + (ph.target - BAND - 1), COL.low], [0, '基準 ' + (ph.target - BAND) + '〜' + (ph.target + BAND), COL.mid], [1, '速い ' + (ph.target + BAND + 1) + '〜', COL.high]].forEach(function (L) {
+      ctx.fillStyle = L[2]; txt(L[1], xOf(L[0], 1.2), H * 0.835, 'center');
+    });
+
+    // 予告
+    var ne = nextEvent(G.T - 0.01), ae = eventAt(G.T);
+    if (ae) {
+      font('400', H * 0.042, FD);
+      ctx.fillStyle = ae.type === 'rare' ? COL.high : COL.danger;
+      txt(ae.type === 'rare' ? 'レア鉱脈! 速く漕いで掘る(熱に注意)' : '隕石群! 遅いレーンへ', cx, y0 - H * 0.13, 'center');
+    } else if (ne && ne.t - Tv <= LOOK) {
+      var left = Math.ceil(ne.t - Tv);
+      font('400', H * 0.042, FD);
+      ctx.fillStyle = ne.type === 'rare' ? COL.high : COL.danger;
+      txt((ne.type === 'rare' ? 'レア鉱脈 接近 ' : '隕石群 接近 ') + left, cx, y0 - H * 0.13, 'center');
+      font('700', H * 0.026, FB); ctx.fillStyle = COL.text;
+      txt(ne.type === 'rare' ? '速いレーンで掘れます(行くかは自由)' : '遅いレーンに逃げてください', cx, y0 - H * 0.085, 'center');
+    }
+
+    // 左: 回転数
+    var hudTop = stripH + H * 0.03;
+    ctx.fillStyle = COL.text; font('900', H * 0.13, FN);
+    var cs = String(Math.round(G.dispC));
+    txt(cs, W * 0.03, hudTop + H * 0.11);
+    var cw = ctx.measureText(cs).width;
+    font('700', H * 0.03, FB); ctx.fillStyle = COL.sub; txt('rpm', W * 0.03 + cw + 8, hudTop + H * 0.11);
+    ctx.fillStyle = COL.mid; font('700', H * 0.032, FB); txt('目標 ' + ph.target + ' ±' + BAND, W * 0.03, hudTop + H * 0.155);
+    if (G.knobDone[phaseIndex(G.T)]) { ctx.fillStyle = COL.mid; font('700', H * 0.026, FB); txt('ドリル強化中 ×1.2', W * 0.03, hudTop + H * 0.195); }
+
+    // 右: 鉱石
+    ctx.textAlign = 'right';
+    font('700', H * 0.028, FB); ctx.fillStyle = COL.sub; txt('鉱石', W * 0.97, hudTop + H * 0.03, 'right');
+    ctx.fillStyle = COL.text; font('900', H * 0.085, FN); txt(fmt(G.ore), W * 0.97, hudTop + H * 0.105, 'right');
+    font('700', H * 0.028, FB); ctx.fillStyle = COL.high; txt('レア ' + G.rare, W * 0.97, hudTop + H * 0.15, 'right');
+
+    // 熱ゲージ(右端)
+    var gx = W * 0.955, gy0 = H * 0.5, gh = H * 0.22, gw = W * 0.018;
+    ctx.fillStyle = 'rgba(238,241,255,0.12)'; rrect(gx, gy0, gw, gh, gw / 2); ctx.fill();
+    var hf = clamp(G.heat / 100, 0, 1);
+    ctx.fillStyle = hf > 0.75 ? COL.danger : (hf > 0.45 ? '#ff9f43' : COL.low);
+    rrect(gx, gy0 + gh * (1 - hf), gw, gh * hf, gw / 2); ctx.fill();
+    font('700', H * 0.026, FB); ctx.fillStyle = COL.sub; txt('熱', gx + gw / 2, gy0 + gh + H * 0.035, 'center');
+    if (stalled) { ctx.fillStyle = COL.danger; font('400', H * 0.05, FD); txt('停止中 ' + Math.ceil(G.stallUntil - Tv), cx, yHit - H * 0.12, 'center'); }
+
+    // 中央上: コンボ
+    // 右: コンボ(中央の上は予告用に空けておく)
+    ctx.fillStyle = G.combo > 0 ? COL.text : COL.sub; font('900', H * 0.06, FN);
+    txt(String(G.combo), W * 0.97, hudTop + H * 0.235, 'right');
+    font('700', H * 0.026, FB); ctx.fillStyle = COL.mid;
+    txt('コンボ' + (comboMult() > 1 ? ' 鉱石 ×' + comboMult() : ''), W * 0.97, hudTop + H * 0.275, 'right');
+
+    // トースト
+    var ty = y0 + H * 0.12;
+    G.toasts = G.toasts.filter(function (t) { return G.clock - t.at < t.sec; });
+    G.toasts.forEach(function (t, k) {
+      var age = G.clock - t.at, a = Math.min(1, age / 0.15, (t.sec - age) / 0.3);
+      ctx.globalAlpha = a; font('400', H * 0.04, FD);
+      var tw = ctx.measureText(t.text).width + H * 0.06, th = H * 0.065, yy = ty + k * (th + 8);
+      ctx.fillStyle = 'rgba(7,10,26,0.82)'; rrect(cx - tw / 2, yy, tw, th, th / 2); ctx.fill();
+      ctx.fillStyle = t.color; txt(t.text, cx, yy + th / 2 + 1, 'center', 'middle');
+    });
+    ctx.globalAlpha = 1;
+
+    // 当たった・オーバーヒートの赤いふち
+    var fa = G.clock - G.flashAt;
+    if (fa < 0.6) { ctx.strokeStyle = 'rgba(255,93,93,' + (0.8 * (1 - fa / 0.6)) + ')'; ctx.lineWidth = 18; ctx.strokeRect(0, 0, W, H); }
+
+    drawStrip(stripH, Tv);
+  }
+
+  // 上の細いコース表(区間・ノブの旗・自分の回転数)
+  function drawStrip(h, Tv) {
+    var x0 = W * 0.03, x1 = W * 0.97, y0 = h * 0.18, y1 = h * 0.86, V0 = 45, V1 = 100;
+    ctx.fillStyle = 'rgba(17,22,46,0.92)'; ctx.fillRect(0, 0, W, h);
+    function X(t) { return x0 + (x1 - x0) * t / G.total; }
+    function Y(v) { return y1 - (y1 - y0) * (clamp(v, V0, V1) - V0) / (V1 - V0); }
+    var cur = phaseIndex(G.T);
+    G.phases.forEach(function (p, i) {
+      ctx.fillStyle = i === cur ? 'rgba(255,209,102,0.45)' : 'rgba(255,209,102,0.16)';
+      ctx.fillRect(X(p.start) + 1, Y(p.target + BAND), X(p.start + p.dur) - X(p.start) - 2, Y(p.target - BAND) - Y(p.target + BAND));
+      font('700', h * 0.17, FB); ctx.fillStyle = i === cur ? COL.text : COL.sub;
+      if (ctx.measureText(p.name).width < X(p.start + p.dur) - X(p.start) - 10) txt(p.name, X(p.start) + 6, h * 0.16, 'left', 'top');
+    });
+    ctx.strokeStyle = COL.text; ctx.lineWidth = 1.6; ctx.beginPath();
+    G.trace.forEach(function (p, i) { var x = X(p[0]), y = Y(p[1]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+    ctx.stroke();
+    ctx.strokeStyle = COL.mid; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(X(Tv), 0); ctx.lineTo(X(Tv), h); ctx.stroke();
+    font('700', h * 0.2, FB); ctx.fillStyle = COL.text;
+    txt('残り ' + mmss((G.total - Tv) / 1), x1, h * 0.95, 'right', 'bottom');
+  }
+
+  // ================= ループ =================
+  var lastTs = null;
+  function frame(ts) {
+    if ($('play').hidden || !G) { lastTs = null; return; }
+    var dt = lastTs === null ? 0 : Math.min(0.1, (ts - lastTs) / 1000);
+    lastTs = ts;
+    if (!G.finished) {
+      autoPauseCheck();
+      // 漕ぐのをやめたら自動で一時停止(20 rpm 未満が 3 秒)
+      if (!G.paused) {
+        var c = cadenceNow();
+        G.clock += dt * SPEED;
+        while (G.clock >= G.T + 1 && !G.finished) {
+          if (c !== null && c < 20) { G.lowRun++; if (G.lowRun >= 3) { pauseGame('stopped'); break; } } else G.lowRun = 0;
+          tick(); G.T++;
+          if (G.T >= G.total) finishGame();
+        }
+      } else {
+        G.clock = G.T; // 一時停止中は時計を止める
+      }
+    }
+    visualBeat(dt);
+    draw(dt);
+    requestAnimationFrame(frame);
+  }
+
+  // ================= 画面の切り替え =================
+  var chosenMin = 20;
+  Array.prototype.forEach.call(document.querySelectorAll('.menus button'), function (b) {
+    b.addEventListener('click', function () {
+      chosenMin = parseInt(b.getAttribute('data-min'), 10);
+      Array.prototype.forEach.call(document.querySelectorAll('.menus button'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    });
+  });
+
+  var wakeLock = null;
+  function keepAwake() {
+    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { wakeLock = l; }, function () {}); } catch (e) { /* 無視 */ }
+  }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && !$('play').hidden) keepAwake(); });
+
+  function startGame() {
+    audioInit();
+    newGame(chosenMin);
+    AU.nextBeat = 0; AU.beatNo = 0; AU.visualBeats = [];
+    $('start').hidden = true; $('result').hidden = true; $('play').hidden = false;
+    $('manual').hidden = input.mode !== 'manual';
+    hideKnobButton();
+    fitCanvas();
+    pauseGame('waiting');
+    keepAwake();
+    lastTs = null; requestAnimationFrame(frame);
+  }
+  function finishGame() {
+    G.finished = true; G.paused = true;
+    hideKnobButton(); $('overlay').hidden = true;
+    var rec = {
+      date: new Date().toISOString(), minutes: G.minutes, ore: Math.floor(G.ore), rare: G.rare, maxCombo: G.maxCombo,
+      inBand: G.playSec ? Math.round(100 * G.inBandSec / G.playSec) : 0,
+      avg: G.playSec ? Math.round(G.cadSum / G.playSec) : 0,
+      knob: Object.keys(G.knobDone).length + '/' + Object.keys(G.knobAsked).length, hits: G.hits,
+      input: input.mode
+    };
+    saveRecord(rec);
+    showResult(rec, true);
+  }
+  function quitGame() {
+    if (!G) return;
+    G.finished = true;
+    $('play').hidden = true; $('start').hidden = false;
+    renderHistory();
+  }
+
+  function showResult(rec, complete) {
+    $('play').hidden = true; $('start').hidden = true; $('result').hidden = false;
+    $('resultTitle').textContent = complete ? '帰還しました(' + rec.minutes + ' 分)' : '記録';
+    var tiles = [
+      ['鉱石', fmt(rec.ore), ''], ['レア鉱石', String(rec.rare), ''], ['最大コンボ', String(rec.maxCombo), '秒'],
+      ['基準レーンにいた割合', String(rec.inBand), '%'], ['平均ケイデンス', String(rec.avg), 'rpm'],
+      ['ノブ「回した」', rec.knob, '回'], ['隕石に当たった', String(rec.hits), '回'], ['メニュー', String(rec.minutes), '分']
+    ];
+    var box = $('tiles'); box.textContent = '';
+    tiles.forEach(function (t) {
+      var d = document.createElement('div'); d.className = 'tile';
+      var k = document.createElement('div'); k.className = 'k'; k.textContent = t[0];
+      var v = document.createElement('div'); v.className = 'v'; v.textContent = t[1];
+      if (t[2]) { var s = document.createElement('small'); s.textContent = t[2]; v.appendChild(s); }
+      d.appendChild(k); d.appendChild(v); box.appendChild(d);
+    });
+    drawResultGraph();
+    window.scrollTo(0, 0);
+  }
+  function drawResultGraph() {
+    var c = $('resultGraph'), r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
+    var g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var w = r.width, h = r.height, x0 = 40, x1 = w - 10, y0 = 10, y1 = h - 26, V0 = 40, V1 = 110;
+    function X(t) { return x0 + (x1 - x0) * t / G.total; }
+    function Y(v) { return y1 - (y1 - y0) * (clamp(v, V0, V1) - V0) / (V1 - V0); }
+    g.clearRect(0, 0, w, h);
+    g.font = '500 12px ' + FB; g.fillStyle = COL.sub; g.textAlign = 'right'; g.textBaseline = 'middle';
+    for (var v = 50; v <= 100; v += 10) {
+      g.strokeStyle = 'rgba(154,163,207,0.15)'; g.beginPath(); g.moveTo(x0, Y(v)); g.lineTo(x1, Y(v)); g.stroke();
+      if (v % 20 === 0) g.fillText(String(v), x0 - 6, Y(v));
+    }
+    G.phases.forEach(function (p) {
+      g.fillStyle = 'rgba(255,209,102,0.25)';
+      g.fillRect(X(p.start) + 1, Y(p.target + BAND), X(p.start + p.dur) - X(p.start) - 2, Y(p.target - BAND) - Y(p.target + BAND));
+      g.fillStyle = COL.sub; g.textAlign = 'center'; g.textBaseline = 'top'; g.fillText(p.name, X(p.start + p.dur / 2), y1 + 6);
+    });
+    G.events.forEach(function (e) {
+      g.fillStyle = e.type === 'rare' ? 'rgba(255,79,216,0.22)' : 'rgba(255,93,93,0.18)';
+      g.fillRect(X(e.t), y0, X(e.t + e.dur) - X(e.t), y1 - y0);
+    });
+    g.strokeStyle = COL.text; g.lineWidth = 1.6; g.beginPath();
+    G.trace.forEach(function (p, i) { if (i === 0) g.moveTo(X(p[0]), Y(p[1])); else g.lineTo(X(p[0]), Y(p[1])); });
+    g.stroke();
+  }
+
+  // ================= 記録 =================
+  function loadRecords() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]') || []; } catch (e) { return []; } }
+  function saveRecord(rec) {
+    try { var a = loadRecords(); a.unshift(rec); localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(0, 100))); } catch (e) { /* 保存できない環境 */ }
+  }
+  function renderHistory() {
+    var a = loadRecords(), t = $('hist'); t.textContent = '';
+    if (!a.length) { $('histNote').textContent = 'まだ記録はありません。'; return; }
+    $('histNote').textContent = '';
+    var head = document.createElement('tr');
+    ['日時', 'メニュー', '鉱石', 'レア', '最大コンボ', '基準レーン', '平均', 'ノブ'].forEach(function (s) { var th = document.createElement('th'); th.textContent = s; head.appendChild(th); });
+    t.appendChild(head);
+    a.slice(0, 10).forEach(function (r) {
+      var tr = document.createElement('tr'), d = new Date(r.date);
+      [(d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + (r.input === 'manual' ? '(試し)' : ''),
+        r.minutes + ' 分', fmt(r.ore), r.rare, r.maxCombo + ' 秒', r.inBand + '%', r.avg + ' rpm', r.knob].forEach(function (s) {
+        var td = document.createElement('td'); td.textContent = s; tr.appendChild(td);
+      });
+      t.appendChild(tr);
+    });
+  }
+
+  // ================= ボタン =================
+  $('btnBike').addEventListener('click', connectBike);
+  $('btnManual').addEventListener('click', useManual);
+  $('btnStart').addEventListener('click', startGame);
+  $('btnPause').addEventListener('click', function () {
+    if (!G || G.finished) return;
+    if (G.paused) { if (G.pauseReason === 'manual') resumeGame(); } else pauseGame('manual');
+  });
+  $('btnSound').addEventListener('click', function () {
+    AU.on = !AU.on; audioInit();
+    this.setAttribute('aria-pressed', AU.on ? 'true' : 'false'); this.textContent = AU.on ? '音 オン' : '音 オフ';
+  });
+  $('btnQuit').addEventListener('click', quitGame);
+  $('btnAgain').addEventListener('click', startGame);
+  $('btnHome').addEventListener('click', function () { $('result').hidden = true; $('start').hidden = false; renderHistory(); });
+
+  renderHistory();
+  if (PARAMS.get('manual') === '1') useManual();
+
+  // 動作確認用(画面の動作には使わない)
+  window.__space = {
+    get G() { return G; }, setCadence: setCadence, parseIndoorBikeCadence: parseIndoorBikeCadence,
+    buildPhases: buildPhases, laneOf: laneOf
+  };
+})();
+</script>
+</body>
+</html>
