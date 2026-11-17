@@ -130,6 +130,24 @@ Create ONE final production game sprite rock_crystal_2.png, a distinctive SECOND
 
 ### comet.png
 
+#### round 4 追記（2026-11-18 / Asia/Tokyo・最後の1回）
+
+- BRIEFとround 3のREVIEWを確認し、`comet.png` だけを組み込み `image_gen.imagegen` で**独立した新規画像として1枚生成**。今回の追加再生成0回、通算3回目の作り直し。添付2枚は方向性の参考だけにし、編集入力・コピー・加工には使用していない。seed指定欄はなく固定・再利用なし。画像編集の連鎖なし。
+- 原本（保持）: `C:\Users\manga\.codex\generated_images\01a1ea14-3321-7dc1-b302-a634a0803f9d\call_OLZv36POSe02Zjw1VgEG1bxc.png`（1254×1254 RGBA）。生成時の原本表示では各結晶の輪郭・透明な面・内部の白い芯・鋼青の隙間を確認したが、最終PNGの合格判定には代用しない。
+- 後処理はPillowのalpha値8以下の透過整理、透明余白トリミング、縦横比保持のLANCZOS縮小、透明512×512への中央配置、RGBA PNGロスレス保存のみ。描画・明るさ／コントラスト補正・減色なし。最終352,434バイト（400 KB未満）。外接矩形 `(38,41,474,470)`、実体436×429px、縦横比1.0163、最長辺85.16%、四辺に透明余白あり。
+- **保存済み最終PNGの平均輝度: 165.7386 / 255。目安175〜195の範囲外（下限より9.2614低い）。** `convert('L')`（概ね0.299R + 0.587G + 0.114B）をalpha > 0の画素だけで算術平均。透明画素を除外し半透明画素は等重み。輝度245以上は3.1344%。測定だけで補正なし。「最後の1回」の指定に従い追加生成していない。
+- `preview.png` は1536×1576の既存一覧を維持し、comet枠 `(640,618)-(896,874)` だけを最終PNGから暗背景 `#060818` に再合成。差分外接矩形 `(657,636,879,855)` がcomet枠内だけであることを検査。他画像・ラベル・既存64px欄は不変。
+- **後処理後の暗背景での目視は環境障害により未完了。合格とはしない。** 保存済みPNGを再読込し、通常氷・comet・紫結晶を左から280px／64pxで暗背景 `#060818` に並べた `C:\Users\manga\AppData\Local\Temp\pedal-rhythm-round4-comet-final-dark-comparison.png` を作成して開こうとしたが、`view_image` が `helper_sandbox_lock_failed / SetNamedSecurityInfoW ... failed: 5` で表示失敗。Node画像表示も同じsandbox障害でカーネル終了。原本表示・数値検査を最終目視の代用にしない。
+- 気になる点: 指定より平均輝度が低く、通常氷に対する特別感が不足する可能性。64pxでの白い芯・結晶の分離、面の自然さ、合成縁、絵柄の統一は最終目視未確認。合格済み9画像とREVIEWは不変。更新対象はcomet・本欄追記・previewの3ファイルのみ。
+
+新しい生成プロンプトの要旨（実際に指定した主要条件）:
+
+```text
+Generate ONE brand-new original comet nucleus sprite, NOT an edit or copy of the supplied references. Invent a new near-spherical integrated cluster of 16-24 short thick translucent ice crystals, each with distinct boundaries, optical planes, finely painted natural fractures/inclusions and a localized white luminous core INSIDE. Realistic hand-painted hard-SF concept art; not low-poly, crumpled paper or snowball.
+Target mean grayscale 175-195, around 185: 55-60% luminous pale silver/white ice faces (205-230), 30-35% MEDIUM STEEL BLUE side planes and separating channels (115-155), 5-10% near-white highlights/internal cores (235-250). Preserve readable blue gaps, neither black nor washed out. Strong UPPER LEFT light, blue lower-right shading. White/steel blue/pale cyan only, no purple or orange. White-luminous but structurally readable at 64px.
+Real TRANSPARENT RGBA square, complete centered object about 85% extent, ratio <=1.25, clear margins. Glow inside crystals only. NO tail, halo, ring, rays, flare, bloom, particles, floating fragments, mist, background, cast shadow, text, logo, border, UI, watermark or signature.
+```
+
 #### round 3 追記（2026-11-18 / Asia/Tokyo）
 
 - 作り直し **1回**（追加再生成0回、上限3回）。組み込み `image_gen.imagegen` で独立した新規画像として生成。前版の密集した透明結晶のかたまり・描き込みという方向をプロンプトで維持し、明るい鋼青〜薄い水色の地肌、面積のある白い内部発光芯、ほぼ白い左上面を指定。コードによる描画・明るさ／コントラスト補正は一切していない。seed指定欄はなく固定・再利用なし。編集済み画像を再編集する連鎖もなし。
