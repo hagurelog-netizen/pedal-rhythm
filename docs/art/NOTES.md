@@ -130,6 +130,25 @@ Create ONE final production game sprite rock_crystal_2.png, a distinctive SECOND
 
 ### comet.png
 
+#### round 3 追記（2026-11-18 / Asia/Tokyo）
+
+- 作り直し **1回**（追加再生成0回、上限3回）。組み込み `image_gen.imagegen` で独立した新規画像として生成。前版の密集した透明結晶のかたまり・描き込みという方向をプロンプトで維持し、明るい鋼青〜薄い水色の地肌、面積のある白い内部発光芯、ほぼ白い左上面を指定。コードによる描画・明るさ／コントラスト補正は一切していない。seed指定欄はなく固定・再利用なし。編集済み画像を再編集する連鎖もなし。
+- 原本（保持）: `C:\Users\manga\.codex\generated_images\01a1ea09-5e6d-7030-b43b-97d04980d504\call_XEdyhHCJTNs0JWligsMEwmvU.png`（1254×1254 RGBA）。
+- 原本の生成時表示では、白〜淡い水色の結晶が全面で重なり、細かい割れ・内包物と、結晶内部を通る幅のある白い輝きが見える。右下に青い立体陰影を残した。これは原本の所見であり、後処理後の合格判定ではない。
+- 後処理はPillowによるalpha値8以下の透過整理・透明余白のトリミング・縦横比保持のLANCZOS縮小・透明512×512への中央配置・PNGロスレス保存のみ。最終303,835バイト（400 KB未満）、実alphaあり。外接矩形 `(38,48,474,463)`、436×415px、縦横比1.0506、最長辺85.16%、四辺に透明余白あり。減色・色調補正なし。
+- **保存済み最終PNGの平均輝度: 215.1269 / 255。** Pillowの `convert('L')`（概ね0.299R + 0.587G + 0.114B）をalpha > 0 の画素だけで算術平均。前版cometは141.2027、未変更の `rock_ice_1.png` は151.2392。目安170以上を満たし、氷の岩より63.8877高い。透明背景は平均に含めず、測定に基づく補正はしていない。
+- `preview.png` は1536×1576の既存一覧を保ち、comet枠 `(640,618)-(896,874)` だけを最終PNGから暗背景 `#060818` に再合成。他画像・ラベル・既存64px欄は維持。画素差分の外接矩形 `(657,635,879,857)` を測り、comet枠外の画素が不変であることを検査。
+- **後処理後の暗背景での目視確認は環境障害で未完了。合格とは記載しない。** 最終PNGを読み直し、暗背景 `#060818` に通常氷・comet・紫結晶を左から280px／64pxで並べた `C:\Users\manga\AppData\Local\Temp\pedal-rhythm-round3-comet-final-dark-comparison.png` を作成。これと最終 `preview.png` の `view_image` は、ともに `helper_sandbox_lock_failed / SetNamedSecurityInfoW ... failed: 5` で表示失敗。Node表示・代替画面の起動も失敗。原本の表示と数値検査を最終目視の代用にしない。
+- 気になる点: 64pxでの白い芯・結晶同士の分離、明るい部分の細部保持、最終輪郭・合成縁、他素材との絵柄は暗背景で要再目視。尾・外側の光の輪・粒子を入れない指定はしたが、後処理後の表示では確認できていない。合格済み9画像と `REVIEW.md` は変更せず、コミット対象はcomet・本欄追記・previewの3ファイルだけ。
+
+新しい生成プロンプトの要旨（原文の主要指定）:
+
+```text
+Create ONE final production sprite comet.png for a hard-SF space mining game. New independently generated image, not an edit. A compact roughly spherical COMET NUCLEUS: DENSE INTEGRATED MASS OF TRANSLUCENT ICE CRYSTALS, substantial overlapping clear-to-milky crystals across the entire visible surface, richly painted fractures, inclusions, glacial layers and frosted edges. Detailed realistic hand-painted hard-SF art, not simplified polygons or cheap CGI.
+CRITICAL ROUND-3 LIGHTING: WHITE-LUMINOUS special resource, brighter than a pale cyan ice asteroid. LIGHT STEEL BLUE TO VERY PALE CYAN substrate, never dark slate. Most crystals NEAR-WHITE with broad BRILLIANT WHITE LUMINOUS CORES INSIDE their volume, not just tiny specular glints. Upper-left facets nearly white. Aim for visible-object mean grayscale at least 185, ideally 195, absolutely above 170. About 70 percent pearly white / pale ice blue; preserve translucent detail. Lower-right pale cool-blue readable shadows, strong UPPER LEFT key light. Only white / light steel blue / pale cyan, no purple or orange. Read as a WHITE GLOWING CRYSTAL MASS at 64px.
+Genuinely TRANSPARENT RGBA square, one complete centered near-round mass, width/height within 1.25, about 85% extent, clear margins. All glow INSIDE crystals, crisp silhouette. NO TAIL, halo, ring, starburst, flare, rays, bloom, particles, floating fragments, mist, background, ground, cast shadow, text, logos, UI, watermark or signature.
+```
+
 #### round 2 追記（2026-11-18 / Asia/Tokyo）
 
 - 作り直し **1回**（追加再生成0回）。組み込み `image_gen.imagegen` で新規生成し、編集の連鎖なし。seed指定欄はなく、固定・再利用していない。合格済み9画像とREVIEW.mdは変更していない。
