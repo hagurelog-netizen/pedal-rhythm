@@ -1368,7 +1368,7 @@
     // 船
     var acc = ml >= 0 ? LANE_COL[ml] : COL.sub;
     drawShip(g, G.shipX, sy, sr, G.roll, G.paused ? 0.5 : 0.6 + G.dispC / 100 * 1.7, G.heat, acc, stalled, G.cadPhase);
-    if (VT - G.collectAt < 0.25) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - (VT - G.collectAt) / 0.25; g.drawImage(glow('#ffffff'), G.shipX - sr * 2, sy - sr * 2, sr * 4, sr * 4); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    if (VT - G.collectAt < 0.25) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = (1 - (VT - G.collectAt) / 0.25) * (ART.ship ? 0.35 : 1); g.drawImage(glow('#ffffff'), G.shipX - sr * 2, sy - sr * 2, sr * 4, sr * 4); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
     if (stalled) {
       font(g, '400', H * 0.045, FD); g.fillStyle = COL.danger; txt(g, '冷却中 ' + Math.ceil(G.stallUntil - G.T), G.shipX, sy - sr * 2.3, 'center');
       if (!RM && Math.random() < rdt * 10) emit({ k: 'steam', x: G.shipX + rnd(-1, 1) * sr, y: sy, vx: rnd(-0.03, 0.03) * H, vy: -rnd(0.04, 0.1) * H, t: 0, life: 1.2, size: sr * 0.6 });
