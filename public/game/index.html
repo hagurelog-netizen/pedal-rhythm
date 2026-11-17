@@ -6,178 +6,242 @@
 <title>ペダルリズム 宇宙採掘</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Chakra+Petch:wght@600;700&family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
 <style>
-  /* 宇宙採掘(試作版)。iPad 横置きでハンドルに載せる前提。ゲーム画面は暗い宇宙の 1 色に固定。 */
+  /* 宇宙採掘。iPad 横置きでハンドルに載せる前提。暗い宇宙 + ネオンの計器で 1 つの見た目に固定。 */
   :root {
-    --space: #070a1a;
-    --panel: #11162e;
-    --line: #2a3160;
+    --space: #060818;
+    --panel: #0f1430;
+    --panel2: #161c40;
+    --line: #2b3470;
     --text: #eef1ff;
     --sub: #9aa3cf;
-    --mid: #ffd166;   /* 基準レーン(採掘) */
-    --high: #ff4fd8;  /* 速いレーン(レア鉱脈) */
-    --low: #4cc9f0;   /* 遅いレーン(退避) */
+    --ice: #8fe3ff;
+    --iron: #ffa25c;
+    --crystal: #e58bff;
+    --go: #ffd166;
     --danger: #ff5d5d;
     --f-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
     --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
     --f-num: "Big Shoulders Display", "Dela Gothic One", sans-serif;
+    --f-tag: "Chakra Petch", "Zen Kaku Gothic New", sans-serif;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0; background: var(--space); color: var(--text);
-    font-family: var(--f-body); font-size: 18px; line-height: 1.6;
+    font-family: var(--f-body); font-size: 17px; line-height: 1.6;
     -webkit-text-size-adjust: 100%;
   }
   [hidden] { display: none !important; }
   button {
-    font: inherit; font-weight: 700; color: var(--space); background: var(--mid);
-    border: 0; border-radius: 14px; min-height: 60px; padding: 10px 26px; cursor: pointer;
+    font: inherit; font-weight: 700; color: #1a1300; background: var(--go);
+    border: 0; border-radius: 14px; min-height: 56px; padding: 10px 22px; cursor: pointer;
     touch-action: manipulation;
   }
   button.ghost { background: transparent; color: var(--text); border: 2px solid var(--line); }
   button:disabled { opacity: 0.4; cursor: default; }
-  button:focus-visible { outline: 3px solid var(--low); outline-offset: 2px; }
+  button:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 3px solid var(--ice); outline-offset: 2px; }
 
-  /* ---------- スタート / 結果画面 ---------- */
   .page {
     min-height: 100%;
-    padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 40px max(20px, env(safe-area-inset-left));
+    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 44px max(18px, env(safe-area-inset-left));
   }
-  .inner { max-width: 980px; margin: 0 auto; display: grid; gap: 22px; }
-  h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(32px, 5vw, 52px); margin: 0; line-height: 1.15; }
-  h1 small { display: block; font-size: 0.42em; color: var(--mid); letter-spacing: 0.08em; margin-top: 6px; }
-  h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0 0 10px; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; }
+  .inner { max-width: 1020px; margin: 0 auto; display: grid; gap: 18px; }
+  h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(28px, 4.4vw, 44px); margin: 0; line-height: 1.15; }
+  h1 small { font-family: var(--f-tag); font-size: 0.42em; color: var(--go); letter-spacing: 0.14em; margin-left: 12px; }
+  h2 { font-family: var(--f-display); font-weight: 400; font-size: 21px; margin: 0 0 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; min-width: 0; }
   .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .row > button { flex: 1 1 220px; }
-  .muted { color: var(--sub); font-size: 16px; }
-  .menus { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-  .menus button { background: transparent; color: var(--text); border: 2px solid var(--line); min-height: 76px; font-size: 22px; }
-  .menus button[aria-pressed="true"] { background: var(--mid); color: var(--space); border-color: var(--mid); }
-  .menus button span { display: block; font-size: 14px; font-weight: 500; }
-  #btnStart { font-size: 24px; min-height: 76px; width: 100%; }
+  .muted { color: var(--sub); font-size: 15px; margin: 8px 0 0; }
+  .tag { font-family: var(--f-tag); font-size: 12px; letter-spacing: 0.16em; color: var(--sub); text-transform: uppercase; }
+
+  /* 鉱石アイコン */
+  .oi { display: inline-block; width: 0.95em; height: 0.95em; vertical-align: -0.1em; margin-right: 0.3em; }
+  .oi.ice { background: var(--ice); clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); }
+  .oi.iron { background: var(--iron); clip-path: polygon(30% 4%, 82% 10%, 100% 55%, 62% 100%, 10% 82%, 0 34%); }
+  .oi.crystal { background: var(--crystal); clip-path: polygon(50% 0, 88% 42%, 50% 100%, 12% 42%); }
+
+  /* 拠点 */
+  .top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 20px; }
+  .stock { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px;
+    font-family: var(--f-num); font-weight: 900; font-size: 24px; line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .chip small { font-family: var(--f-body); font-size: 13px; font-weight: 700; color: var(--sub); margin-right: 6px; }
+  .basewrap { position: relative; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: #04050f; }
+  #baseCv { display: block; width: 100%; aspect-ratio: 16 / 5; }
+  .baseinfo { position: absolute; left: 14px; bottom: 10px; right: 14px; display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+  .baseinfo b { font-family: var(--f-display); font-weight: 400; font-size: 20px; }
+  .baseinfo span { color: var(--sub); font-size: 14px; }
+  .sector { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-bottom: 10px; }
+  .sector b { font-family: var(--f-display); font-weight: 400; font-size: 19px; color: var(--go); }
+  .sector span { color: var(--sub); font-size: 15px; }
+  .missions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .mis { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; min-width: 0; }
+  .mis .n { font-family: var(--f-num); font-weight: 900; font-size: 30px; line-height: 1.1; }
+  .mis .n small { font-family: var(--f-body); font-size: 14px; font-weight: 700; color: var(--sub); margin-left: 4px; }
+  .mis .k { font-size: 14px; color: var(--sub); }
+  .mis.done { border-color: var(--go); }
+  .mis.done .k::after { content: " ― 達成"; color: var(--go); font-weight: 700; }
+  .opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .lbl { font-size: 14px; color: var(--sub); margin-bottom: 4px; }
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .seg button { background: transparent; color: var(--text); border: 2px solid var(--line); min-height: 52px; padding: 4px 6px; font-size: 17px; }
+  .seg button[aria-pressed="true"] { background: var(--go); color: #1a1300; border-color: var(--go); }
+  #btnStart { font-size: 23px; min-height: 72px; width: 100%; margin-top: 12px; font-family: var(--f-display); font-weight: 400; }
   .rules { margin: 0; padding-left: 1.2em; }
   .rules li + li { margin-top: 4px; }
-  .lane-low { color: var(--low); font-weight: 700; }
-  .lane-mid { color: var(--mid); font-weight: 700; }
-  .lane-high { color: var(--high); font-weight: 700; }
+  .c-ice { color: var(--ice); font-weight: 700; } .c-iron { color: var(--iron); font-weight: 700; } .c-crystal { color: var(--crystal); font-weight: 700; }
+
+  /* 改造 */
+  .shop { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .up { background: var(--panel2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .up h3 { margin: 0; font-size: 18px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .pips { letter-spacing: 3px; color: var(--go); font-size: 14px; white-space: nowrap; }
+  .up p { margin: 0; font-size: 14px; color: var(--sub); }
+  .up .cost { font-size: 15px; font-weight: 700; }
+  .up .cost .lack { color: var(--danger); }
+  .up button { min-height: 46px; font-size: 16px; padding: 6px 10px; }
+
   .hist { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
   .hist th, .hist td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
   .hist-wrap { overflow-x: auto; }
-  #bikeStatus { font-weight: 700; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--sub); font-size: 15px; }
+  textarea { width: 100%; min-height: 90px; margin: 8px 0; background: #070a1c; color: var(--text); border: 1px solid var(--line); border-radius: 10px; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; padding: 8px; }
+  details button { min-height: 44px; font-size: 15px; padding: 6px 14px; }
 
-  /* ---------- プレイ画面 ---------- */
+  /* プレイ画面 */
   #play { position: fixed; inset: 0; overflow: hidden; background: var(--space); }
   #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .ctl {
-    position: absolute; z-index: 2; display: flex; gap: 10px;
-    left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
+    position: absolute; z-index: 3; display: flex; gap: 8px;
+    left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
   }
-  .ctl button { min-height: 48px; padding: 6px 16px; font-size: 16px; background: rgba(17, 22, 46, 0.8); color: var(--text); border: 1.5px solid var(--line); }
-  #knobBtn {
-    position: absolute; z-index: 3;
-    right: max(18px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom));
-    min-height: 110px; min-width: 230px; font-size: 30px; font-family: var(--f-display); font-weight: 400;
-    border-radius: 24px; box-shadow: 0 0 0 6px rgba(255, 209, 102, 0.25), 0 0 40px rgba(255, 209, 102, 0.45);
-  }
-  #knobBtn small { display: block; font-family: var(--f-body); font-size: 15px; font-weight: 700; }
+  .ctl button { min-height: 48px; padding: 6px 14px; font-size: 15px; background: rgba(10, 13, 32, 0.86); color: var(--text); border: 1.5px solid var(--line); }
   #manual {
-    position: absolute; z-index: 2; left: 50%; transform: translateX(-50%);
-    bottom: max(14px, env(safe-area-inset-bottom)); width: min(460px, 46vw);
-    background: rgba(17, 22, 46, 0.85); border: 1.5px solid var(--line); border-radius: 14px; padding: 8px 14px;
-    display: grid; gap: 2px; font-size: 14px; color: var(--sub);
+    position: absolute; z-index: 2; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(300px, 34vw); background: rgba(10, 13, 32, 0.78); border: 1px solid var(--line); border-radius: 12px; padding: 6px 12px;
+    font-size: 13px; color: var(--sub);
   }
-  #manual input { width: 100%; height: 36px; accent-color: var(--mid); }
-  #overlay {
-    position: absolute; z-index: 4; inset: 0; display: grid; place-items: center;
-    background: rgba(7, 10, 26, 0.72); padding: 20px;
+  #manual input { width: 100%; height: 30px; accent-color: var(--go); display: block; }
+  #play.ctl-open #manual { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 58px); }
+  #knobBtn {
+    position: absolute; z-index: 3; right: max(16px, env(safe-area-inset-right)); top: 57%;
+    min-height: 96px; width: 200px; font-size: 27px; font-family: var(--f-display); font-weight: 400; line-height: 1.2;
+    border-radius: 22px; box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.22), 0 0 34px rgba(255, 209, 102, 0.4);
   }
+  #knobBtn small { display: block; font-family: var(--f-body); font-size: 14px; font-weight: 700; }
+  #overlay { position: absolute; z-index: 4; inset: 0; display: grid; place-items: center; background: rgba(6, 8, 24, 0.74); padding: 20px; }
   #overlay .box { max-width: 560px; text-align: center; display: grid; gap: 14px; justify-items: center; }
-  #overlayTitle { font-family: var(--f-display); font-size: clamp(28px, 4.6vw, 44px); line-height: 1.2; }
+  #overlayTitle { font-family: var(--f-display); font-size: clamp(26px, 4.4vw, 42px); line-height: 1.2; }
   #overlayText { color: var(--sub); }
 
-  /* ---------- 結果 ---------- */
-  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+  /* 結果 */
+  .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .tiles.small { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; min-width: 0; }
   .tile .k { font-size: 14px; color: var(--sub); }
   .tile .v { font-family: var(--f-num); font-weight: 900; font-size: 44px; line-height: 1.05; font-variant-numeric: tabular-nums; }
-  .tile .v small { font-family: var(--f-body); font-size: 15px; font-weight: 700; color: var(--sub); margin-left: 4px; }
-  #resultGraph { width: 100%; height: 260px; display: block; }
-  @media (max-width: 700px) {
-    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .menus { grid-template-columns: 1fr; }
+  .tiles.small .tile .v { font-size: 34px; }
+  .tile .v.word { font-family: var(--f-body); font-weight: 700; font-size: 22px; line-height: 1.6; }
+  .tile .v small { font-family: var(--f-body); font-size: 14px; font-weight: 700; color: var(--sub); margin-left: 4px; }
+  .lanebar { display: flex; height: 22px; border-radius: 8px; overflow: hidden; margin: 8px 0 4px; background: var(--panel2); }
+  .lanebar i { display: block; height: 100%; }
+  #resultGraph { width: 100%; height: 230px; display: block; }
+  .award { font-family: var(--f-display); font-size: 19px; color: var(--go); margin-top: 10px; }
+  @media (max-width: 760px) {
+    .missions, .shop, .opts { grid-template-columns: 1fr; }
+    .tiles.small { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #baseCv { aspect-ratio: 16 / 8; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    #knobBtn { box-shadow: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { #knobBtn { box-shadow: none; } }
 </style>
 </head>
 <body>
 
-<!-- ===== スタート画面 ===== -->
-<div id="start" class="page">
+<!-- ===== 拠点(スタート画面) ===== -->
+<div id="home" class="page">
   <div class="inner">
-    <h1>ペダルリズム<small>宇宙採掘 ― 試作版</small></h1>
+    <div class="top">
+      <h1>ペダルリズム<small>SPACE MINING</small></h1>
+      <div class="stock" id="stock"></div>
+    </div>
+
+    <div class="basewrap">
+      <canvas id="baseCv" role="img" aria-label="採掘拠点"></canvas>
+      <div class="baseinfo"><b id="baseName"></b><span id="baseNote"></span></div>
+    </div>
 
     <div class="card">
-      <h2>1. 入力を選ぶ</h2>
+      <h2>今日の出航</h2>
+      <div class="sector"><span class="tag">SECTOR</span><b id="sectorName"></b><span id="sectorDesc"></span></div>
+      <div class="lbl">今日の依頼(1 つ達成するごとに拠点が増設されます。3 つ全部でボーナス)</div>
+      <div class="missions" id="homeMissions"></div>
+      <div class="opts">
+        <div><div class="lbl">時間</div><div class="seg" id="segMin">
+          <button type="button" data-v="15">15 分</button><button type="button" data-v="20">20 分</button><button type="button" data-v="30">30 分</button></div></div>
+        <div><div class="lbl">強さ(基準の回転数)</div><div class="seg" id="segLevel">
+          <button type="button" data-v="easy">軽め</button><button type="button" data-v="normal">ふつう</button><button type="button" data-v="hard">しっかり</button></div></div>
+      </div>
       <div class="row">
         <button id="btnBike" type="button">バイクに接続</button>
         <button id="btnManual" type="button" class="ghost">バイクなしで試す(スライダー)</button>
       </div>
-      <p class="muted" id="bikeStatus">まだ選んでいません。</p>
+      <p class="muted" id="bikeStatus">入力を選んでください。</p>
+      <button id="btnStart" type="button" disabled>出航する</button>
     </div>
 
     <div class="card">
-      <h2>2. メニューを選ぶ</h2>
-      <div class="menus" role="group" aria-label="メニュー">
-        <button type="button" data-min="15" aria-pressed="false">15 分<span>軽め</span></button>
-        <button type="button" data-min="20" aria-pressed="true">20 分<span>ふつう</span></button>
-        <button type="button" data-min="30" aria-pressed="false">30 分<span>しっかり</span></button>
-      </div>
+      <h2>船の改造</h2>
+      <div class="shop" id="shopHome"></div>
     </div>
-
-    <button id="btnStart" type="button" disabled>出航する</button>
 
     <div class="card">
       <h2>遊び方</h2>
       <ul class="rules">
-        <li>漕ぐ速さで、採掘船のレーンが変わります。<span class="lane-low">遅い</span> / <span class="lane-mid">基準</span> / <span class="lane-high">速い</span> の 3 本です。</li>
-        <li><span class="lane-mid">基準レーン</span>(目標 ±5 rpm)にいる間、鉱石が少しずつ貯まります。</li>
-        <li>ときどき<span class="lane-high">レア鉱脈</span>が来ます。速いレーンで掘ると大量に取れますが、エンジンの熱が上がります。熱が満タンになると 6 秒止まります。どこで戻るかの勝負です。</li>
-        <li>ときどき<span class="lane-low">隕石群</span>が来ます。遅いレーンに逃げてよけてください(ひと休みにもなります)。</li>
-        <li>何も来ていないときに基準レーンから 3 秒以上外れると、コンボが切れます。コンボが続くほど、鉱石の量と音楽が増えます。</li>
-        <li>区間の始めに「ノブを回してみよう」と出ます。回したら右下の「回した!」を押すと、その区間のドリルが強化されます。</li>
-        <li>漕ぐのをやめると自動で一時停止します。</li>
+        <li>漕ぐ速さで船が左右に動きます。<span class="c-ice">遅い = 左(氷が多い)</span>、<span class="c-iron">基準 = 中央(鉄が多い)</span>、<span class="c-crystal">速い = 右(結晶が多い)</span>。</li>
+        <li>前から小惑星が 2〜3 個来ます。狙うものを自分で決めて、そのレーンに合わせるとロックオン。同じレーンで漕ぎ続けると割れて、鉱石が手に入ります。</li>
+        <li>右のレーンでは熱が溜まります。満タンで 6 秒停止。<span class="c-ice">氷</span>を掘ると一気に冷えます。「結晶 → 氷で冷やす → 結晶」が基本の組み立てです。</li>
+        <li>途切れずに割り続けると連鎖になり、取れ高と音楽が増えます。ゆっくりのレーンを選んでも連鎖は続きます。</li>
+        <li>区間の始めに「ノブを回してみよう」と出ます。回したら「回した!」を押すと、その区間は取れ高 1.2 倍。</li>
+        <li>集めた鉱石で船を改造できます。依頼を達成すると拠点が育ちます。休んでも何も減りません。</li>
+        <li>ビートは、いまいるレーンの真ん中の速さで鳴ります。漕ぐのをやめると自動で一時停止します。</li>
       </ul>
     </div>
 
     <div class="card">
-      <h2>これまでの記録</h2>
+      <h2>航海日誌</h2>
       <div class="hist-wrap"><table class="hist" id="hist"></table></div>
       <p class="muted" id="histNote"></p>
+      <details>
+        <summary>記録の書き出し・読み込み(端末を変えるとき、記録が消えたとき用)</summary>
+        <textarea id="saveText" spellcheck="false" aria-label="記録データ"></textarea>
+        <div class="row"><button id="btnExport" type="button" class="ghost">書き出す</button><button id="btnImport" type="button" class="ghost">この内容を読み込む</button></div>
+        <p class="muted" id="saveNote">記録はこの端末のブラウザの中にだけ保存されます。</p>
+      </details>
     </div>
-
-    <p class="muted">これは試作版です。数字の調整はまだ大ざっぱです。記録はこの iPad(ブラウザ)の中にだけ保存されます。<a href="../" style="color: var(--low);">接続テストのページ</a></p>
+    <p class="muted"><a href="../" style="color: var(--ice);">接続テストのページ</a></p>
   </div>
 </div>
 
 <!-- ===== プレイ画面 ===== -->
 <div id="play" hidden>
   <canvas id="cv" role="img" aria-label="採掘画面"></canvas>
-  <div class="ctl">
+  <div class="ctl" id="ctl" hidden>
     <button id="btnPause" type="button">一時停止</button>
-    <button id="btnSound" type="button" aria-pressed="true">音 オン</button>
-    <button id="btnQuit" type="button">やめる</button>
+    <button id="btnSound" type="button">音 オン</button>
+    <button id="btnQuit" type="button">ここで帰還する</button>
   </div>
   <div id="manual" hidden>
-    <label for="manualRange">仮のケイデンス: <b id="manualVal">0</b> rpm(↑↓キーでも変えられます)</label>
+    <label for="manualRange">仮の回転数 <b id="manualVal">0</b> rpm(↑↓キー可)</label>
     <input id="manualRange" type="range" min="0" max="130" step="1" value="0">
   </div>
-  <button id="knobBtn" type="button" hidden>回した!<small id="knobSub">ノブ +2</small></button>
+  <button id="knobBtn" type="button" hidden>回した!<small id="knobSub"></small></button>
   <div id="overlay" hidden>
     <div class="box">
       <div id="overlayTitle"></div>
@@ -191,15 +255,31 @@
 <div id="result" class="page" hidden>
   <div class="inner">
     <h1 id="resultTitle">帰還しました</h1>
-    <div class="tiles" id="tiles"></div>
+    <div class="tiles" id="haul"></div>
+    <div class="card">
+      <h2>依頼の精算</h2>
+      <div class="missions" id="resultMissions"></div>
+      <div class="award" id="award"></div>
+    </div>
+    <div class="tiles small" id="stats"></div>
     <div class="card">
       <h2>回転数の記録</h2>
       <canvas id="resultGraph" role="img" aria-label="回転数の記録グラフ"></canvas>
-      <p class="muted">帯は各区間の目標(±5 rpm)、線はあなたの回転数です。</p>
+      <div class="lbl">レーンにいた時間の内訳</div>
+      <div class="lanebar" id="laneBar"></div>
+      <p class="muted" id="laneNote"></p>
+    </div>
+    <div class="card">
+      <h2>船の改造</h2>
+      <div class="shop" id="shopResult"></div>
+    </div>
+    <div class="card">
+      <div class="sector"><span class="tag">NEXT SECTOR</span><b id="nextName"></b><span id="nextDesc"></span></div>
+      <p class="muted" id="saveWarn" hidden>記録を保存できませんでした。このブラウザでは記録が残らない可能性があります。</p>
     </div>
     <div class="row">
-      <button id="btnAgain" type="button">もう一度</button>
-      <button id="btnHome" type="button" class="ghost">最初の画面へ</button>
+      <button id="btnAgain" type="button">もう一度 出航する</button>
+      <button id="btnHome" type="button" class="ghost">拠点へ戻る</button>
     </div>
   </div>
 </div>
@@ -208,36 +288,103 @@
 (function () {
   'use strict';
 
-  // ================= 設定 =================
-  var BAND = 5;              // 目標 ±5 rpm が基準レーン
-  var LOOK = 6;              // 何秒先の物体まで道に見せるか(バイクのデータは約 1 秒遅れなので長め)
-  var HEAT_UP = 9;           // 速いレーンにいる 1 秒あたりの熱
-  var HEAT_DOWN_MID = 7;
-  var HEAT_DOWN_LOW = 12;
-  var STALL_SEC = 6;         // オーバーヒートで止まる秒数
-  var COMBO_GRACE = 3;       // 何秒外れ続けたらコンボが切れるか
-  var STALE_MS = 3500;       // これ以上データが来なければ「届いていない」扱い
+  // ================= 基本 =================
   var PARAMS = new URLSearchParams(location.search);
   var SPEED = Math.max(0.1, Math.min(60, parseFloat(PARAMS.get('speed')) || 1)); // 動作確認用の早回し
-  var HIST_KEY = 'pedalRhythm.space.history.v1';
-
+  var SAVE_KEY = 'pedalRhythm.space.v2';
   var FTMS = '00001826-0000-1000-8000-00805f9b34fb';
   var INDOOR_BIKE_DATA = '00002ad2-0000-1000-8000-00805f9b34fb';
+  var RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  // 調整用の数字
+  var APPROACH = 4.5;   // 次の小惑星が近づいてくる秒数(回転数を変える時間 + データの 1 秒遅れ)
+  var WINDOW = 6;       // 手の届く位置にとどまる秒数
+  var LOCK_HOLD = 1.2;  // 同じレーンにこの秒数いたらロックオン(通り過ぎただけでは掴まない)
+  var OFF_LIMIT = 2.5;  // 採掘中にレーンを外れていられる秒数
+  var DRIFT_LIMIT = 5;  // 漂流がこの秒数続くと連鎖が切れる
+  var STALL = 6;        // オーバーヒートで止まる秒数
+  var GRACE = 8;        // 区間が変わった直後の猶予
+  var RAMP = 6;         // 基準の回転数が切り替わるのにかける秒数
+  var STALE_MS = 3500;
 
   function $(id) { return document.getElementById(id); }
-  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function rint(n) { return Math.floor(Math.random() * n); }
+  function wpick(w) { var tot = 0, k; for (k in w) tot += w[k]; var r = Math.random() * tot; for (k in w) { r -= w[k]; if (r <= 0) return k; } return k; }
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function hexRgb(h) { var n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  function rgba(h, a) { var c = hexRgb(h); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+  function mix(h1, h2, t) { var a = hexRgb(h1), b = hexRgb(h2); t = clamp(t, 0, 1); return 'rgb(' + Math.round(lerp(a[0], b[0], t)) + ',' + Math.round(lerp(a[1], b[1], t)) + ',' + Math.round(lerp(a[2], b[2], t)) + ')'; }
   function mmss(sec) { sec = Math.max(0, Math.ceil(sec)); var m = Math.floor(sec / 60), s = sec % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
   function fmt(n) { return Math.floor(n).toLocaleString('ja-JP'); }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+
+  var COL = { text: '#eef1ff', sub: '#9aa3cf', go: '#ffd166', danger: '#ff5d5d', space: '#060818', rail: '#7c86e8' };
+  var ORE = {
+    ice: { name: '氷', color: '#8fe3ff', pal: ['#1c3550', '#5c94ba', '#e8f9ff'] },
+    iron: { name: '鉄', color: '#ffa25c', pal: ['#241815', '#6e4838', '#cf9c7c'] },
+    crystal: { name: '結晶', color: '#e58bff', pal: ['#161028', '#3a2c5c', '#8a72bc'] },
+    comet: { name: '彗星', color: '#c9f6ff', pal: ['#2a4a66', '#8cc4e0', '#ffffff'] },
+    far: { name: '', color: '#6a6390', pal: ['#0b0a16', '#221e38', '#6c6596'] }
+  };
+  var TYPES = ['ice', 'iron', 'crystal'];
+  var LANE_COL = [ORE.ice.color, ORE.iron.color, ORE.crystal.color];
+  var LANE_NAME = ['低', '中', '高'];
+  var SIZES = { S: { hp: 6, r: 0.78 }, M: { hp: 10, r: 1 }, L: { hp: 15, r: 1.28 } };
+  var YIELD = { iron: { S: 3, M: 6, L: 10 }, ice: { S: 3, M: 5, L: 8 }, crystal: { S: 1, M: 2, L: 4 } };
+  var LANE_W = [
+    { ice: 72, iron: 24, crystal: 4 },
+    { iron: 70, ice: 16, crystal: 14 },
+    { crystal: 62, iron: 26, ice: 12 }
+  ];
+  var SECTORS = {
+    belt: { name: '小惑星帯', desc: '氷・鉄・結晶がバランスよく出ます。', w: { ice: 1, iron: 1, crystal: 1 }, big: 0, heat: 1 },
+    ice: { name: '氷の宙域', desc: '氷が多く出ます。冷やしやすいので、長く攻められます。', w: { ice: 1.9, iron: 0.8, crystal: 1 }, big: 0, heat: 1 },
+    crystal: { name: '結晶の嵐', desc: '結晶が多く出ますが、熱が溜まりやすくなります。', w: { ice: 1, iron: 0.7, crystal: 1.7 }, big: 0, heat: 1.15 },
+    giant: { name: '巨岩の宙域', desc: '大きな小惑星が多く、1 個の取れ高が大きい宙域です。', w: { ice: 1, iron: 1.15, crystal: 1 }, big: 0.3, heat: 1 }
+  };
+  var LEVELS = { easy: { name: '軽め', off: -10 }, normal: { name: 'ふつう', off: 0 }, hard: { name: 'しっかり', off: 6 } };
+  var UPG = {
+    cooler: { name: '冷却装置', blurb: '右のレーンで長く掘れるようになります。', eff: function (lv) { return '熱の溜まり方 -' + (lv * 15) + '%'; },
+      cost: [{ ice: 80, iron: 60 }, { ice: 200, iron: 150 }, { ice: 450, iron: 300 }] },
+    drill: { name: 'ドリル', blurb: '小惑星が早く割れて、1 回でたくさん掘れます。', eff: function (lv) { return '削る速さ +' + (lv * 15) + '%'; },
+      cost: [{ iron: 120, crystal: 20 }, { iron: 300, crystal: 50 }, { iron: 600, crystal: 110 }] },
+    radar: { name: 'レーダー', blurb: '2 つ先の小惑星が分かり、彗星が見つかりやすくなります。', eff: function (lv) { return lv ? '2 つ先を表示 / 彗星 +' + (lv * 3) + '%' : '未搭載'; },
+      cost: [{ crystal: 30 }, { crystal: 70 }, { crystal: 140 }] }
+  };
+
+  // ================= 記録 =================
+  function defaultSave() {
+    return { v: 2, ore: { ice: 0, iron: 0, crystal: 0 }, up: { cooler: 0, drill: 0, radar: 0 }, base: 0, runs: 0, sector: 'belt', history: [],
+      prefs: { min: 20, level: 'normal', sound: true } };
+  }
+  function normalizeSave(o) {
+    var d = defaultSave();
+    if (!o || o.v !== 2) return d;
+    TYPES.forEach(function (k) { d.ore[k] = Math.max(0, Math.floor(+((o.ore || {})[k]) || 0)); });
+    Object.keys(d.up).forEach(function (k) { d.up[k] = clamp(Math.floor(+((o.up || {})[k]) || 0), 0, 3); });
+    d.base = Math.max(0, Math.floor(+o.base || 0)); d.runs = Math.max(0, Math.floor(+o.runs || 0));
+    if (SECTORS[o.sector]) d.sector = o.sector;
+    if (Array.isArray(o.history)) d.history = o.history.slice(0, 60);
+    var p = o.prefs || {};
+    if ([15, 20, 30].indexOf(p.min) >= 0) d.prefs.min = p.min;
+    if (LEVELS[p.level]) d.prefs.level = p.level;
+    d.prefs.sound = p.sound !== false;
+    return d;
+  }
+  function loadSave() { try { return normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY))); } catch (e) { return defaultSave(); } }
+  function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); return true; } catch (e) { return false; } }
+  var S = loadSave();
 
   // ================= 入力(バイク / スライダー) =================
   var input = { mode: null, latest: null, at: 0, device: null, connected: false };
-
   function setCadence(v) { input.latest = v; input.at = performance.now(); }
   function cadenceNow() {
     if (input.latest === null || performance.now() - input.at > STALE_MS / SPEED) return null;
     return input.latest;
   }
-
   function parseIndoorBikeCadence(dv) {
     if (dv.byteLength < 2) return null;
     var f = dv.getUint16(0, true), o = 2;
@@ -247,26 +394,23 @@
     if (o + 2 > dv.byteLength) return null;
     return dv.getUint16(o, true) * 0.5;
   }
-
   function attachBike() {
     var dev = input.device;
     $('bikeStatus').textContent = '接続中: ' + (dev.name || '(名前なし)') + ' …';
-    return dev.gatt.connect().then(function (server) {
-      return server.getPrimaryService(FTMS);
-    }).then(function (svc) {
-      return svc.getCharacteristic(INDOOR_BIKE_DATA);
-    }).then(function (ch) {
-      ch.addEventListener('characteristicvaluechanged', function (ev) {
-        var c = parseIndoorBikeCadence(ev.target.value);
-        if (c !== null) setCadence(c);
+    return dev.gatt.connect().then(function (server) { return server.getPrimaryService(FTMS); })
+      .then(function (svc) { return svc.getCharacteristic(INDOOR_BIKE_DATA); })
+      .then(function (ch) {
+        ch.addEventListener('characteristicvaluechanged', function (ev) {
+          var c = parseIndoorBikeCadence(ev.target.value);
+          if (c !== null) setCadence(c);
+        });
+        return ch.startNotifications();
+      }).then(function () {
+        input.connected = true;
+        $('bikeStatus').textContent = '接続しました: ' + (dev.name || '(名前なし)') + '。「出航する」を押してください。';
+        $('btnStart').disabled = false;
+        if (G && G.paused && G.pauseReason === 'disconnected') pauseGame('stopped');
       });
-      return ch.startNotifications();
-    }).then(function () {
-      input.connected = true;
-      $('bikeStatus').textContent = '接続しました: ' + (dev.name || '(名前なし)') + '。メニューを選んで「出航する」を押してください。';
-      $('btnStart').disabled = false;
-      hideOverlayIf('disconnected');
-    });
   }
   function connectBike() {
     if (!navigator.bluetooth) {
@@ -278,169 +422,303 @@
       if (input.device) input.device.removeEventListener('gattserverdisconnected', onBikeLost);
       input.device = dev; input.mode = 'bike';
       dev.addEventListener('gattserverdisconnected', onBikeLost);
-      $('manual').hidden = true;
       return attachBike();
     }).catch(function (e) {
-      var msg = e && e.name === 'NotFoundError' ? '選択がキャンセルされました。' : '接続できませんでした: ' + ((e && (e.message || e.name)) || String(e));
-      $('bikeStatus').textContent = msg;
+      $('bikeStatus').textContent = e && e.name === 'NotFoundError' ? '選択がキャンセルされました。' : '接続できませんでした: ' + ((e && (e.message || e.name)) || String(e));
     });
   }
   function onBikeLost() {
     input.connected = false;
     $('bikeStatus').textContent = '接続が切れました。もう一度「バイクに接続」を押してください。';
-    if (G && G.running && !G.finished) {
-      pauseGame('disconnected');
-    }
+    if (G && !G.finished) pauseGame('disconnected');
   }
   function useManual() {
     input.mode = 'manual';
-    $('manual').hidden = false;
-    $('bikeStatus').textContent = 'スライダーで試します。バイクのデータと同じく、1 秒に 1 回だけ値が届く作りです。';
+    $('bikeStatus').textContent = 'スライダーで試します。バイクと同じく、値は 1 秒に 1 回だけ届きます。';
     $('btnStart').disabled = false;
   }
-  // スライダーの値は 1 秒に 1 回だけ届ける(バイクと同じ条件にする)
-  setInterval(function () {
-    if (input.mode === 'manual') setCadence(parseInt($('manualRange').value, 10) || 0);
-  }, 1000 / SPEED);
+  setInterval(function () { if (input.mode === 'manual') setCadence(parseInt($('manualRange').value, 10) || 0); }, 1000 / SPEED);
   $('manualRange').addEventListener('input', function () { $('manualVal').textContent = this.value; });
   document.addEventListener('keydown', function (e) {
     if (input.mode !== 'manual' || $('play').hidden) return;
     var r = $('manualRange'), v = parseInt(r.value, 10);
-    if (e.key === 'ArrowUp') { r.value = Math.min(130, v + 5); }
-    else if (e.key === 'ArrowDown') { r.value = Math.max(0, v - 5); }
+    if (e.key === 'ArrowUp') r.value = Math.min(130, v + 4);
+    else if (e.key === 'ArrowDown') r.value = Math.max(0, v - 4);
     else return;
     e.preventDefault(); $('manualVal').textContent = r.value;
   });
 
   // ================= ゲームの中身 =================
-  var G = null;
+  var G = null, VT = 0; // VT: 画面用の時計(実時間)
 
-  function buildPhases(totalSec) {
+  function buildPhases(total, off) {
     var spec = [
-      { name: 'ウォームアップ', frac: 0.15, target: 65, knob: '軽め(1〜2)' },
-      { name: '採掘 1', frac: 0.30, target: 80, knob: '+2' },
-      { name: '深層採掘', frac: 0.28, target: 75, knob: '+2' },
-      { name: 'ラストスパート', frac: 0.12, target: 85, knob: '-2' },
-      { name: '帰還', frac: 0.15, target: 60, knob: 'いちばん軽く' }
+      { name: '発進', frac: 0.15, base: 65, knob: '軽めにしよう', kind: 'warm' },
+      { name: '採掘', frac: 0.27, base: 78, knob: '+2 回してみよう', kind: 'main' },
+      { name: '深層', frac: 0.28, base: 75, knob: '+1 回してみよう', kind: 'deep' },
+      { name: 'ラストスパート', frac: 0.15, base: 82, knob: '-1 戻してみよう', kind: 'sprint' },
+      { name: '帰還', frac: 0.15, base: 60, knob: 'いちばん軽くしよう', kind: 'cool' }
     ];
     var t = 0, out = [];
     spec.forEach(function (s, i) {
-      var dur = i === spec.length - 1 ? totalSec - t : Math.round(totalSec * s.frac);
-      out.push({ name: s.name, target: s.target, knob: s.knob, start: t, dur: dur });
+      var dur = i === spec.length - 1 ? total - t : Math.round(total * s.frac);
+      out.push({ name: s.name, base: s.base + off, knob: s.knob, kind: s.kind, start: t, dur: dur });
       t += dur;
     });
     return out;
   }
-  function buildEvents(phases, totalSec) {
-    var ev = [], warmEnd = phases[0].dur, coolStart = phases[phases.length - 1].start;
-    var t = warmEnd + 25 + Math.random() * 20;
-    while (t < coolStart - 20) {
-      var ph = phaseAt(phases, t);
-      var rareP = ph.name === 'ラストスパート' ? 0.8 : 0.58;
-      var type = Math.random() < rareP ? 'rare' : 'meteor';
-      var dur = type === 'rare' ? Math.round(12 + Math.random() * 6) : 8;
-      if (t + dur > coolStart - 5) break;
-      ev.push({ type: type, t: Math.round(t), dur: dur, hit: false, mined: 0 });
-      t += dur + 35 + Math.random() * 30;
-    }
-    return ev;
+  function makeMissions(runs, minutes) {
+    var T = [{ iron: 240, ice: 100, crystal: 30 }, { iron: 150, ice: 190, crystal: 30 }, { iron: 150, ice: 100, crystal: 60 }];
+    var t = T[runs % 3], k = minutes / 20;
+    return ['iron', 'ice', 'crystal'].map(function (type) {
+      var step = type === 'crystal' ? 2 : 5;
+      return { type: type, need: Math.max(step, Math.round(t[type] * k / step) * step), done: false };
+    });
   }
-  function phaseAt(phases, t) {
-    for (var i = 0; i < phases.length; i++) if (t < phases[i].start + phases[i].dur) return phases[i];
-    return phases[phases.length - 1];
-  }
-  function phaseIndex(t) {
+  function phaseIdx(t) {
     for (var i = 0; i < G.phases.length; i++) if (t < G.phases[i].start + G.phases[i].dur) return i;
     return G.phases.length - 1;
   }
-  function eventAt(t) {
-    for (var i = 0; i < G.events.length; i++) { var e = G.events[i]; if (t >= e.t && t < e.t + e.dur) return e; }
-    return null;
+  function baseAt(t) {
+    var i = phaseIdx(t), p = G.phases[i];
+    if (i === 0) return p.base;
+    return lerp(G.phases[i - 1].base, p.base, clamp((t - p.start) / RAMP, 0, 1));
   }
-  function nextEvent(t) {
-    for (var i = 0; i < G.events.length; i++) if (G.events[i].t > t) return G.events[i];
-    return null;
+  // レーン: -1 漂流 / 0 低 / 1 中 / 2 高 / 3 回しすぎ。整数の回転数が境目で揺れても行き来しないよう、1.5 rpm の遊びを持たせる
+  var LO = [-Infinity, -12, -4, 4, 12], HI = [-12, -4, 4, 12, Infinity];
+  function laneRaw(d) { return d < -12 ? -1 : (d < -4 ? 0 : (d <= 4 ? 1 : (d <= 12 ? 2 : 3))); }
+  function laneHyst(d, cur) {
+    var raw = laneRaw(d);
+    if (cur === null || raw === cur) return raw;
+    var i = cur + 1;
+    if (d >= LO[i] - 1.5 && d <= HI[i] + 1.5) return cur;
+    return raw;
   }
-  function laneOf(c, target) { return c < target - BAND ? 0 : (c > target + BAND ? 2 : 1); }
-  function comboMult() { return G.combo >= 60 ? 1.5 : (G.combo >= 20 ? 1.2 : 1); }
-  function knobMult() { return G.knobDone[phaseIndex(G.T)] ? 1.2 : 1; }
+  function chainMult() { return G.chain >= 12 ? 1.5 : (G.chain >= 5 ? 1.2 : 1); }
+  function knobMult() { return G.knobDone[phaseIdx(G.T)] ? 1.2 : 1; }
 
-  function newGame(minutes) {
-    var total = minutes * 60;
-    var phases = buildPhases(total);
+  function genCracks() {
+    var out = [];
+    for (var i = 0; i < 6; i++) {
+      var a = i / 6 * 6.2832 + rnd(-0.4, 0.4), r = 0, pts = [[0, 0]];
+      while (r < 0.82) { r += rnd(0.14, 0.24); a += rnd(-0.5, 0.5); pts.push([Math.cos(a) * r, Math.sin(a) * r]); }
+      out.push(pts);
+    }
+    return out;
+  }
+  function makeRock(lane, kind) {
+    var sec = G.sector, w = {}, k;
+    for (k in LANE_W[lane]) w[k] = LANE_W[lane][k] * sec.w[k];
+    if (kind === 'warm') w.crystal = 0;
+    if (kind === 'cool') { w.ice *= 2; w.crystal *= 0.5; }
+    var type = wpick(w);
+    var sw = kind === 'warm' ? { S: 1 } : kind === 'main' ? { S: 30, M: 55, L: 15 } : kind === 'deep' ? { S: 15, M: 45, L: 40 } :
+      kind === 'sprint' ? { S: 45, M: 45, L: 10 } : { S: 50, M: 50 };
+    if (sec.big && kind !== 'warm') { sw.L = (sw.L || 0) + 100 * sec.big; }
+    var size = wpick(sw), y = {};
+    y[type] = YIELD[type][size];
+    return { lane: lane, type: type, size: size, hp: SIZES[size].hp, hpMax: SIZES[size].hp, yield: y, variant: rint(4),
+      rot0: rnd(0, 6.28), rotV: rnd(0.3, 0.7), cracks: genCracks(), state: 'far', ds: null, dx: 0, dy: 0, dr: 0 };
+  }
+  function makeComet(lane) {
+    return { lane: lane, type: 'comet', size: 'M', hp: 6, hpMax: 6, yield: { crystal: 8, ice: 4 }, variant: 0,
+      rot0: rnd(0, 6.28), rotV: 0.5, cracks: genCracks(), state: 'far', ds: null, dx: 0, dy: 0, dr: 0 };
+  }
+  function debrisAt(t) {
+    for (var i = 0; i < G.debris.length; i++) if (t >= G.debris[i].from && t < G.debris[i].to) return G.debris[i];
+    return null;
+  }
+  function genWave() {
+    var kind = G.phases[phaseIdx(G.T + 8)].kind;
+    var lanes = [0, 1, 2];
+    if (Math.random() < 0.45) lanes.splice(rint(3), 1);
+    var rocks = lanes.map(function (l) { return makeRock(l, kind); });
+    var comet = false, eventful = kind === 'main' || kind === 'deep' || kind === 'sprint';
+    if (eventful) {
+      if (G.cometDue.length && G.T + 8 >= G.cometDue[0]) { G.cometDue.shift(); comet = true; }
+      else if (Math.random() < 0.03 * S.up.radar && G.T - G.lastComet > 90) comet = true;
+    }
+    if (comet) {
+      var i = rint(rocks.length), pref = wpick({ 2: 60, 1: 25, 0: 15 }) | 0;
+      rocks.forEach(function (r, k) { if (r.lane === pref) i = k; });
+      rocks[i] = makeComet(rocks[i].lane);
+      G.lastComet = G.T;
+    }
+    return { rocks: rocks, arr: null, window: comet ? 5 : WINDOW, comet: comet, arrived: false };
+  }
+  function activate(w, approach) {
+    var d = debrisAt(G.T + approach) || debrisAt(G.T + approach + 3), tries = 0;
+    if (d) w.rocks = w.rocks.filter(function (r) { return r.lane !== d.lane; });
+    while (!w.rocks.length && tries++ < 8) {
+      w.rocks = genWave().rocks.filter(function (r) { return !d || r.lane !== d.lane; });
+      w.comet = false; w.window = WINDOW;
+    }
+    w.arr = G.T + approach; w.arrived = false;
+    var cm = null; w.rocks.forEach(function (r) { if (r.type === 'comet') cm = r; });
+    if (cm) { banner('COMET', '彗星 接近 ― ' + LANE_NAME[cm.lane] + 'レーン', '結晶 +8 氷 +4。すぐ通り過ぎます', ORE.comet.color, 5); sfx.comet(); }
+  }
+  function advance() {
+    G.wave.rocks.forEach(function (r) { if (r.state !== 'dead') { if (r.state !== 'gone') goneRock(r); G.ghosts.push(r); } });
+    G.lock = null; G.offT = 0; G.mining = false;
+    G.wave = G.queue.shift(); G.queue.push(genWave());
+    activate(G.wave, APPROACH);
+  }
+  function goneRock(r) { r.state = 'gone'; r.goneVT = VT; r.s0 = r.ds === null ? 0.62 : r.ds; }
+
+  function newGame(minutes, level) {
+    var total = minutes * 60, off = LEVELS[level].off, phases = buildPhases(total, off);
     G = {
-      minutes: minutes, total: total, phases: phases, events: buildEvents(phases, total),
-      T: 0, clock: 0, running: true, paused: true, pauseReason: 'waiting', finished: false,
-      ore: 0, rare: 0, combo: 0, maxCombo: 0, badRun: 0, heat: 0, stallUntil: -1,
-      knobDone: {}, knobAsked: {}, knobShownAt: -99, lastPhase: -1, hits: 0,
-      inBandSec: 0, playSec: 0, cadSum: 0, trace: [], lowRun: 0,
-      toasts: [], flashAt: -99, sparkAt: -99, lastLane: 1, dispC: 0
+      minutes: minutes, level: level, total: total, phases: phases, sector: SECTORS[S.sector], sectorKey: S.sector,
+      T: 0, B: phases[0].base, paused: true, pauseReason: 'waiting', finished: false, lowT: 0,
+      lane: null, laneSince: 0, ml: 1, heat: 0, heatWarned: false, stallUntil: -1, graceUntil: GRACE,
+      chain: 0, chainMax: 0, driftT: 0, offT: 0, lock: null, mining: false, broken: 0, overheats: 0,
+      power: 1 + 0.15 * S.up.drill,
+      got: { ice: 0, iron: 0, crystal: 0 }, dispGot: { ice: 0, iron: 0, crystal: 0 }, missions: makeMissions(S.runs, minutes),
+      knobDone: {}, knobAsked: {}, knobShownAt: -99, lastPhase: -1,
+      debris: [], cometDue: [], lastComet: -999, wave: null, queue: [], ghosts: [],
+      laneSec: [0, 0, 0], driftSec: 0, playSec: 0, cadSum: 0, trace: [], traceNext: 0,
+      toasts: [], banner: null, dispC: 0, shipX: 0, roll: 0, cadPhase: 0, gridPhase: 0,
+      shakeAt: -9, flashAt: -9, flashCol: COL.danger, collectAt: -9, lockVT: -9
     };
+    var main = phases[1], deep = phases[2], sprint = phases[3];
+    var l1 = rint(3), l2 = (l1 + 1 + rint(2)) % 3, dd = Math.min(30, main.dur * 0.2);
+    G.debris.push({ lane: l1, from: main.start + main.dur * 0.42, to: main.start + main.dur * 0.42 + dd, warned: false, started: false });
+    G.debris.push({ lane: l2, from: deep.start + deep.dur * 0.5, to: deep.start + deep.dur * 0.5 + dd, warned: false, started: false });
+    G.cometDue = [main.start + main.dur * 0.78, sprint.start + sprint.dur * 0.25];
+    G.wave = genWave(); G.queue = [genWave(), genWave()];
+    G.wave.rocks = [0, 1, 2].map(function (l) { return makeRock(l, 'warm'); }); // 最初は必ず 3 レーンに 1 個ずつ
+    activate(G.wave, 6);
+    P.length = 0;
     return G;
   }
 
-  function toast(text, color, sec) { G.toasts.push({ text: text, color: color || '#eef1ff', at: G.clock, sec: sec || 2.6 }); if (G.toasts.length > 2) G.toasts.shift(); }
+  function toast(text, color, sec) { G.toasts.push({ text: text, color: color || COL.text, at: VT, sec: sec || 2.6 }); if (G.toasts.length > 2) G.toasts.shift(); }
+  function banner(tag, text, sub, color, sec) { G.banner = { tag: tag, text: text, sub: sub, color: color, at: VT, until: VT + sec }; }
 
-  // 1 秒ごとの判定
-  function tick() {
-    var c = cadenceNow();
-    var idx = phaseIndex(G.T), ph = G.phases[idx];
-    if (idx !== G.lastPhase) {
-      G.lastPhase = idx;
-      toast(ph.name + ' ― 目標 ' + ph.target + ' rpm', '#eef1ff', 3);
-      if (ph.knob) { G.knobAsked[idx] = true; G.knobShownAt = G.T; showKnobButton(ph); toast('ノブを ' + ph.knob + ' に回してみよう', '#ffd166', 4); }
-    }
-    if (G.knobAsked[idx] && !G.knobDone[idx] && G.T - G.knobShownAt > 30) hideKnobButton();
+  function gain(type, amt, x, y) {
+    if (amt <= 0) return;
+    G.got[type] += amt;
+    emit({ k: 'text', x: x, y: y, t: 0, life: 1.4, text: '+' + amt + ' ' + ORE[type].name, col: ORE[type].color });
+    G.missions.forEach(function (m) {
+      if (!m.done && m.type === type && G.got[type] >= m.need) {
+        m.done = true; m.doneVT = VT;
+        toast('依頼達成! ' + ORE[type].name + ' ' + m.need, COL.go, 3.4); sfx.mission();
+      }
+    });
+  }
+  function lockOn(r) {
+    r.state = 'locked'; G.lock = r; G.offT = 0; G.lockVT = VT;
+    G.wave.rocks.forEach(function (o) { if (o !== r && (o.state === 'in' || o.state === 'far')) goneRock(o); });
+    sfx.lock();
+  }
+  function shatter(r) {
+    G.chain++; if (G.chain > G.chainMax) G.chainMax = G.chain;
+    G.broken++;
+    var mult = chainMult() * knobMult(), k, n = 0;
+    for (k in r.yield) { gain(k, Math.max(1, Math.round(r.yield[k] * mult)), r.dx + (n - 0.5) * 30, r.dy - r.dr - n * 26); n++; }
+    r.state = 'dead';
+    burst(r); sfx.shatter(r.type);
+    if (G.chain === 5 || G.chain === 12) { toast('連鎖 ' + G.chain + '! 取れ高 ×' + chainMult(), COL.go, 2.6); sfx.chain(); }
+    advance();
+  }
+  function abandon(msg) {
+    var r = G.lock; if (!r) return;
+    var prog = 1 - r.hp / r.hpMax, k, any = false;
+    for (k in r.yield) { var a = Math.floor(r.yield[k] * prog * 0.5); if (a > 0) { gain(k, a, r.dx, r.dy - r.dr); any = true; } }
+    if (msg) toast(msg + (any ? '(半分だけ回収)' : ''), COL.sub, 2.2);
+    advance();
+  }
+  function missWave() { advance(); }
+  function overheat() {
+    G.heat = 100; G.stallUntil = G.T + STALL; G.chain = 0; G.overheats++;
+    if (G.lock) abandon('');
+    banner('OVERHEAT', 'オーバーヒート', STALL + ' 秒間 冷却します。連鎖が切れました', COL.danger, 4);
+    G.flashAt = VT; G.flashCol = COL.danger; G.shakeAt = VT; sfx.overheat();
+  }
+  function enterPhase(idx) {
+    var ph = G.phases[idx];
+    G.lastPhase = idx; G.graceUntil = G.T + GRACE;
+    toast(ph.name + ' ― 基準 ' + ph.base + ' rpm', COL.text, 3.2);
+    if (ph.knob) { G.knobAsked[idx] = true; G.knobShownAt = G.T; $('knobSub').textContent = 'ノブを ' + ph.knob; $('knobBtn').hidden = false; toast('ノブを ' + ph.knob, COL.go, 4.5); }
+  }
 
-    c = c === null ? 0 : c;
-    var lane = laneOf(c, ph.target);
-    var ev = eventAt(G.T);
-    var stalled = G.T < G.stallUntil;
+  // 進行(dt はゲーム内の秒)
+  function logic(dt) {
+    var c = cadenceNow(), cv = c === null ? 0 : c;
+    G.T += dt;
+    var idx = phaseIdx(G.T);
+    if (idx !== G.lastPhase) enterPhase(idx);
+    if (!$('knobBtn').hidden && G.T - G.knobShownAt > 40) $('knobBtn').hidden = true;
+    var B = baseAt(G.T); G.B = B;
+    var ln = laneHyst(cv - B, G.lane);
+    if (ln !== G.lane) { G.lane = ln; G.laneSince = G.T; }
+    var stalled = G.T < G.stallUntil, grace = G.T < G.graceUntil;
+    var ml = G.lane < 0 ? -1 : Math.min(G.lane, 2);
+    G.ml = ml;
 
     // 熱
-    if (lane === 2 && !stalled) G.heat += HEAT_UP;
-    else G.heat = Math.max(0, G.heat - (lane === 0 ? HEAT_DOWN_LOW : HEAT_DOWN_MID));
-    if (G.heat >= 100 && !stalled) {
-      G.heat = 100; G.stallUntil = G.T + STALL_SEC; stalled = true;
-      G.combo = 0; G.badRun = 0;
-      toast('オーバーヒート! 6 秒停止', '#ff5d5d', 3); G.flashAt = G.clock;
-    }
-    if (stalled) G.heat = Math.max(0, G.heat - 8);
+    var hf = (1 - 0.15 * S.up.cooler) * G.sector.heat;
+    if (stalled) G.heat -= 7.5 * dt;
+    else if (G.lane === 3) G.heat += 8 * hf * dt;
+    else if (G.lane === 2) G.heat += 3.5 * hf * dt;
+    else if (G.lane === 1) G.heat -= 0.5 * dt;
+    else G.heat -= 2 * dt;
 
-    // 良い状態かどうか
-    var good;
-    if (ev && ev.type === 'meteor') {
-      good = lane === 0;
-      if (!good && !ev.hit && G.T >= ev.t + 1) { // 最初の 1 秒はデータの遅れぶんの猶予
-        ev.hit = true; G.hits++; G.ore = Math.max(0, G.ore - 15); G.combo = 0; G.badRun = 0;
-        toast('隕石に当たった! 鉱石 -15', '#ff5d5d', 2.6); G.flashAt = G.clock;
+    // 宇宙ゴミ
+    G.debris.forEach(function (d) {
+      if (!d.warned && G.T >= d.from - 6) {
+        d.warned = true;
+        banner('WARNING', '宇宙ゴミ 接近 ― ' + LANE_NAME[d.lane] + 'レーン封鎖', Math.round(d.to - d.from) + ' 秒間、このレーンには小惑星が来ません', COL.danger, 5.5); sfx.warn();
       }
-    } else if (ev && ev.type === 'rare') {
-      good = lane >= 1;
+      if (!d.started && G.T >= d.from) {
+        d.started = true;
+        G.wave.rocks.forEach(function (r) { if (r.lane === d.lane && (r.state === 'far' || r.state === 'in')) goneRock(r); });
+      }
+    });
+
+    // 小惑星
+    var w = G.wave;
+    if (!w.arrived && G.T >= w.arr) { w.arrived = true; w.rocks.forEach(function (r) { if (r.state === 'far') r.state = 'in'; }); }
+    G.mining = false;
+    if (G.lock) {
+      var r = G.lock;
+      if (!stalled && ml === r.lane) {
+        r.hp -= G.power * dt; G.offT = 0; G.mining = true;
+        if (r.type === 'ice' || r.type === 'comet') G.heat -= 5 * dt;
+        if (r.hp <= 0) shatter(r);
+      } else {
+        if (!grace) G.offT += dt;
+        if (G.offT >= OFF_LIMIT) abandon('レーンを離れた');
+      }
     } else {
-      good = lane === 1;
+      var alive = false, cand = null;
+      w.rocks.forEach(function (r2) {
+        if (r2.state === 'far' || r2.state === 'in') alive = true;
+        if (r2.state === 'in' && r2.lane === ml) cand = r2;
+      });
+      if (!alive) advance();
+      else if (w.arrived) {
+        if (cand && !stalled && G.T - G.laneSince >= LOCK_HOLD) lockOn(cand);
+        else if (G.T > w.arr + w.window) missWave();
+      }
     }
-    if (stalled) good = false;
 
-    // 採掘
-    if (!stalled) {
-      var m = comboMult() * knobMult();
-      if (lane === 1) { G.ore += 1 * m; G.sparkAt = G.clock; }
-      if (lane === 2 && ev && ev.type === 'rare') { G.ore += 4 * m; G.rare += 1; ev.mined++; G.sparkAt = G.clock; }
-    }
+    G.heat = clamp(G.heat, 0, 100);
+    if (G.heat >= 100 && G.T >= G.stallUntil) overheat();
+    if (G.heat >= 75 && !G.heatWarned && G.T >= G.stallUntil) { G.heatWarned = true; toast('熱が危険! 氷を掘るか、レーンを下げよう', COL.danger, 3); sfx.warn(); }
+    if (G.heat < 55) G.heatWarned = false;
 
-    // コンボ
-    if (good) { G.combo++; G.badRun = 0; if (G.combo > G.maxCombo) G.maxCombo = G.combo; }
-    else if (!stalled) {
-      G.badRun++;
-      if (G.badRun >= COMBO_GRACE && G.combo > 0) { G.combo = 0; toast('コンボが切れた', '#9aa3cf', 1.8); }
-    }
-    if (G.combo === 20 || G.combo === 60) toast(G.combo + ' コンボ! 鉱石 ×' + comboMult(), '#ffd166', 2.4);
+    // 漂流
+    if (G.lane === -1 && !grace) {
+      G.driftT += dt;
+      if (G.driftT >= DRIFT_LIMIT && G.chain > 0) { G.chain = 0; toast('漂流して連鎖が切れた', COL.sub, 2.2); }
+    } else G.driftT = 0;
 
-    if (lane === 1) G.inBandSec++;
-    G.playSec++; G.cadSum += c;
-    G.trace.push([G.T, c]);
-    G.lastLane = lane;
+    // 集計
+    if (ml >= 0) G.laneSec[ml] += dt; else G.driftSec += dt;
+    G.playSec += dt; G.cadSum += cv * dt;
+    if (G.T >= G.traceNext) { G.trace.push([G.T, cv, B]); G.traceNext = Math.floor(G.T) + 1; }
+    if (G.T >= G.total) finishGame(true);
   }
 
   // ================= 一時停止 =================
@@ -457,526 +735,983 @@
     $('overlayTitle').textContent = o.title; $('overlayText').textContent = o.text;
     var btns = $('overlayBtns'); btns.textContent = '';
     if (reason === 'disconnected') {
-      var b = document.createElement('button'); b.type = 'button'; b.textContent = '再接続';
+      var b = el('button', '', '再接続'); b.type = 'button';
       b.addEventListener('click', function () {
         if (!input.device) return;
-        attachBike().catch(function (e) { $('overlayText').textContent = '再接続できませんでした: ' + (e && e.message || e); });
+        attachBike().catch(function (e) { $('overlayText').textContent = '再接続できませんでした: ' + ((e && e.message) || e); });
       });
       btns.appendChild(b);
     }
     if (reason === 'manual') {
-      var r = document.createElement('button'); r.type = 'button'; r.textContent = '再開';
-      r.addEventListener('click', function () { resumeGame(); });
+      var r = el('button', '', '再開'); r.type = 'button';
+      r.addEventListener('click', resumeGame);
       btns.appendChild(r);
     }
-    $('overlay').hidden = false;
-    $('btnPause').textContent = '再開';
-  }
-  function hideOverlayIf(reason) {
-    if (G && G.paused && G.pauseReason === reason) {
-      if (reason === 'disconnected') { G.pauseReason = 'stopped'; pauseGame('stopped'); }
-    }
+    $('overlay').hidden = false; $('btnPause').textContent = '再開';
   }
   function resumeGame() {
-    G.paused = false; G.pauseReason = '';
+    G.paused = false; G.pauseReason = ''; G.lowT = 0;
     $('overlay').hidden = true; $('btnPause').textContent = '一時停止';
-    G.lowRun = 0;
   }
-  // 自動の一時停止と再開(漕ぐのをやめた / データが来ない)
   function autoPauseCheck() {
     var c = cadenceNow();
     if (G.paused) {
       if (G.pauseReason === 'manual' || G.pauseReason === 'disconnected') return;
       if (c !== null && c >= 30) resumeGame();
-      else if (G.pauseReason !== 'waiting') {
-        var want = c === null ? 'nodata' : 'stopped';
-        if (want !== G.pauseReason) pauseGame(want);
-      }
+      else if (G.pauseReason !== 'waiting') { var want = c === null ? 'nodata' : 'stopped'; if (want !== G.pauseReason) pauseGame(want); }
       return;
     }
-    if (c === null) { pauseGame('nodata'); return; }
+    if (c === null) pauseGame('nodata');
   }
 
-  // ================= ノブのボタン =================
-  function showKnobButton(ph) {
-    $('knobSub').textContent = 'ノブ ' + ph.knob;
-    $('knobBtn').hidden = false;
-  }
-  function hideKnobButton() { $('knobBtn').hidden = true; }
   $('knobBtn').addEventListener('click', function () {
-    if (!G) return;
-    var idx = phaseIndex(G.T);
-    G.knobDone[idx] = true; hideKnobButton();
-    toast('ドリル強化! この区間は鉱石 ×1.2', '#ffd166', 2.6);
+    if (!G || G.finished) return;
+    G.knobDone[phaseIdx(G.T)] = true; this.hidden = true;
+    toast('ドリル強化! この区間は取れ高 ×1.2', COL.go, 2.6); sfx.chain();
   });
 
-  // ================= 音(ビートと、コンボで増える楽器) =================
-  var AU = { ctx: null, on: true, nextBeat: 0, beatNo: 0, visualBeats: [], noise: null };
+  // ================= 音 =================
+  var AU = { ctx: null, on: S.prefs.sound, music: null, filt: null, fx: null, nextBeat: 0, beatNo: 0, vis: [], noise: null };
   function audioInit() {
     try {
       if (!AU.ctx) {
         var AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
-        AU.ctx = new AC();
-        var len = AU.ctx.sampleRate * 0.2, buf = AU.ctx.createBuffer(1, len, AU.ctx.sampleRate), d = buf.getChannelData(0);
+        var c = AU.ctx = new AC();
+        AU.filt = c.createBiquadFilter(); AU.filt.type = 'lowpass'; AU.filt.frequency.value = 5000; AU.filt.connect(c.destination);
+        AU.music = c.createGain(); AU.music.connect(AU.filt);
+        AU.fx = c.createGain(); AU.fx.connect(c.destination);
+        var len = Math.floor(c.sampleRate * 0.4), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
         for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
         AU.noise = buf;
+        setSound(AU.on);
       }
       if (AU.ctx.state === 'suspended') AU.ctx.resume();
     } catch (e) { AU.ctx = null; }
   }
-  function env(g, t, peak, dec) {
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+  function setSound(on) {
+    AU.on = on;
+    if (AU.music) { AU.music.gain.value = on ? 0.8 : 0; AU.fx.gain.value = on ? 0.8 : 0; }
+    $('btnSound').textContent = on ? '音 オン' : '音 オフ';
   }
-  function voiceKick(t, strong) {
+  function env(g, t, peak, dec) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + dec); }
+  function tone(dest, type, f0, f1, t, peak, dec) {
     var c = AU.ctx, o = c.createOscillator(), g = c.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(strong ? 160 : 120, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
-    env(g, t, strong ? 0.9 : 0.6, 0.18); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.2);
-    var o2 = c.createOscillator(), g2 = c.createGain();
-    o2.frequency.value = strong ? 1600 : 1100; env(g2, t, 0.12, 0.03); o2.connect(g2); g2.connect(c.destination); o2.start(t); o2.stop(t + 0.05);
+    o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dec);
+    env(g, t, peak, dec); o.connect(g); g.connect(dest); o.start(t); o.stop(t + dec + 0.03);
   }
-  function voiceHat(t) {
+  function noise(dest, t, peak, dec, ftype, freq) {
     var c = AU.ctx, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-    s.buffer = AU.noise; f.type = 'highpass'; f.frequency.value = 7000; env(g, t, 0.25, 0.05);
-    s.connect(f); f.connect(g); g.connect(c.destination); s.start(t); s.stop(t + 0.07);
+    s.buffer = AU.noise; f.type = ftype; f.frequency.value = freq; env(g, t, peak, dec);
+    s.connect(f); f.connect(g); g.connect(dest); s.start(t); s.stop(t + dec + 0.03);
   }
-  var BASS = [55, 55, 65.41, 49];       // A1 A1 C2 G1
-  var ARP = [440, 523.25, 659.25, 783.99, 659.25, 523.25];
-  function voiceBass(t, beat, dur) {
-    var c = AU.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
-    o.type = 'sawtooth'; o.frequency.value = BASS[Math.floor(beat / 4) % 4];
-    f.type = 'lowpass'; f.frequency.value = 420; env(g, t, 0.28, dur * 0.9);
-    o.connect(f); f.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur);
-  }
-  function voiceArp(t, k) {
-    var c = AU.ctx, o = c.createOscillator(), g = c.createGain();
-    o.type = 'triangle'; o.frequency.value = ARP[k % ARP.length]; env(g, t, 0.09, 0.16);
-    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.2);
+  function fxNow() { return AU.ctx && AU.ctx.state === 'running' ? AU.ctx.currentTime + 0.01 : null; }
+  var sfx = {
+    lock: function () { var t = fxNow(); if (t === null) return; tone(AU.fx, 'square', 660, 660, t, 0.08, 0.06); tone(AU.fx, 'square', 990, 990, t + 0.07, 0.08, 0.08); },
+    shatter: function (type) {
+      var t = fxNow(); if (t === null) return;
+      noise(AU.fx, t, 0.5, 0.28, 'lowpass', 1800); tone(AU.fx, 'sine', 190, 55, t, 0.5, 0.25);
+      var seq = type === 'ice' ? [1568, 2093] : type === 'iron' ? [392, 523, 659] : [1047, 1319, 1568, 2093];
+      seq.forEach(function (f, i) { tone(AU.fx, 'triangle', f, f, t + 0.12 + i * 0.07, 0.14, 0.2); });
+    },
+    warn: function () { var t = fxNow(); if (t === null) return; tone(AU.fx, 'square', 440, 440, t, 0.09, 0.12); tone(AU.fx, 'square', 440, 440, t + 0.2, 0.09, 0.12); },
+    overheat: function () { var t = fxNow(); if (t === null) return; tone(AU.fx, 'sawtooth', 420, 90, t, 0.25, 0.7); noise(AU.fx, t, 0.3, 0.6, 'bandpass', 900); },
+    comet: function () { var t = fxNow(); if (t === null) return; [1319, 1760, 2093, 2637, 3136].forEach(function (f, i) { tone(AU.fx, 'sine', f, f, t + i * 0.09, 0.1, 0.35); }); },
+    mission: function () { var t = fxNow(); if (t === null) return; [523, 659, 784, 1047].forEach(function (f, i) { tone(AU.fx, 'triangle', f, f, t + i * 0.1, 0.16, 0.4); }); },
+    chain: function () { var t = fxNow(); if (t === null) return; [659, 880, 1109].forEach(function (f, i) { tone(AU.fx, 'triangle', f, f, t + i * 0.06, 0.12, 0.22); }); },
+    buy: function () { var t = fxNow(); if (t === null) return; [392, 587, 784, 1175].forEach(function (f, i) { tone(AU.fx, 'triangle', f, f, t + i * 0.08, 0.15, 0.3); }); }
+  };
+  var BASS = [55, 55, 65.41, 49], ARP = [440, 523.25, 659.25, 783.99, 659.25, 523.25];
+  function tempoNow() {
+    var l = G.ml < 0 ? 0 : G.ml;
+    return Math.max(30, Math.round(G.B + (l - 1) * 8)); // いまいるレーンの真ん中の速さ
   }
   function audioSchedule() {
-    if (!AU.ctx || !G || G.paused || G.finished) return;
+    if (!AU.ctx || AU.ctx.state !== 'running' || !G || G.paused || G.finished) return;
     var now = AU.ctx.currentTime;
     if (AU.nextBeat < now) AU.nextBeat = now + 0.05;
-    var ph = G.phases[phaseIndex(G.T)];
-    var period = 60 / ph.target;
+    AU.filt.frequency.setTargetAtTime([1500, 5000, 14000][G.ml < 0 ? 0 : G.ml], now, 0.4);
+    var period = 60 / tempoNow();
     while (AU.nextBeat < now + 0.12) {
-      var t = AU.nextBeat, b = AU.beatNo;
-      AU.visualBeats.push(t);
-      if (AU.on) {
-        voiceKick(t, b % 4 === 0);
-        var tier = G.combo >= 60 ? 3 : (G.combo >= 30 ? 2 : (G.combo >= 10 ? 1 : 0));
-        if (tier >= 1) voiceHat(t + period / 2);
-        if (tier >= 2 && b % 2 === 0) voiceBass(t, b, period * 1.9);
-        if (tier >= 3) { voiceArp(t, b * 2); voiceArp(t + period / 2, b * 2 + 1); }
+      var t = AU.nextBeat, b = AU.beatNo, strong = b % 4 === 0;
+      AU.vis.push(t);
+      tone(AU.music, 'sine', strong ? 160 : 120, 45, t, strong ? 0.9 : 0.6, 0.16);
+      tone(AU.music, 'sine', strong ? 1600 : 1100, 0, t, 0.1, 0.03);
+      if (G.chain >= 2) noise(AU.music, t + period / 2, 0.22, 0.05, 'highpass', 7000);
+      if (G.chain >= 5 && b % 2 === 0) {
+        var c = AU.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
+        o.type = 'sawtooth'; o.frequency.value = BASS[Math.floor(b / 4) % 4]; f.type = 'lowpass'; f.frequency.value = 420;
+        env(g, t, 0.26, period * 1.7); o.connect(f); f.connect(g); g.connect(AU.music); o.start(t); o.stop(t + period * 1.9);
+      }
+      if (G.chain >= 10) { tone(AU.music, 'triangle', ARP[(b * 2) % 6], 0, t, 0.08, 0.16); tone(AU.music, 'triangle', ARP[(b * 2 + 1) % 6], 0, t + period / 2, 0.08, 0.16); }
+      if (G.mining && G.lock) { // 採掘ビームの音
+        var pf = G.lock.type === 'ice' ? 1175 : (G.lock.type === 'iron' ? 294 : 1568);
+        tone(AU.fx, 'sawtooth', pf, pf * 1.5, t + period / 2, 0.035, 0.09);
       }
       AU.nextBeat += period; AU.beatNo++;
     }
   }
   setInterval(audioSchedule, 25);
-
-  // 画面の拍(音が無い環境でも動くように)
-  var VB = { phase: 0, pulseAt: -99, count: 0 };
-  function visualBeat(dt) {
-    if (AU.ctx && AU.visualBeats.length) {
+  var VB = { phase: 0, pulseAt: -99 };
+  function visualBeat(rdt) {
+    if (!G) return;
+    if (AU.ctx && AU.ctx.state === 'running') {
       var now = AU.ctx.currentTime;
-      while (AU.visualBeats.length && AU.visualBeats[0] <= now) { AU.visualBeats.shift(); VB.pulseAt = G.clock; VB.count++; }
+      while (AU.vis.length && AU.vis[0] <= now) { AU.vis.shift(); VB.pulseAt = VT; }
       return;
     }
-    if (!G || G.paused) return;
-    var ph = G.phases[phaseIndex(G.T)];
-    VB.phase += dt * ph.target / 60;
-    if (VB.phase >= 1) { VB.phase -= 1; VB.pulseAt = G.clock; VB.count++; }
+    if (G.paused) return;
+    VB.phase += rdt * tempoNow() / 60;
+    if (VB.phase >= 1) { VB.phase -= 1; VB.pulseAt = VT; }
   }
 
-  // ================= 描画 =================
-  var cv = $('cv'), ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1;
+  // ================= 絵の素材(プログラムで生成) =================
+  function mk(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  var SPR = { rock: {}, glow: {} };
+  function glow(color) {
+    if (SPR.glow[color]) return SPR.glow[color];
+    var c = mk(128, 128), g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, rgba(color, 1)); gr.addColorStop(0.35, rgba(color, 0.45)); gr.addColorStop(1, rgba(color, 0));
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    return (SPR.glow[color] = c);
+  }
+  // ごつごつした岩。面ごとに明るさを変えて、左上からの光と影をつける
+  function genRockSprite(type, seed) {
+    var N = 220, c = mk(N, N), g = c.getContext('2d'), R = N * 0.44, cx = N / 2, cy = N / 2, rf = mulberry(seed), pal = ORE[type].pal;
+    var n = 11 + Math.floor(rf() * 4), pts = [], inner = [], i, j, LX = -0.62, LY = -0.78;
+    for (i = 0; i < n; i++) {
+      var a = i / n * 6.2832 + (rf() - 0.5) * 0.3, r = R * (0.74 + rf() * 0.26), ri = r * (0.42 + rf() * 0.2), a2 = a + (rf() - 0.5) * 0.3;
+      pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+      inner.push([cx + Math.cos(a2) * ri, cy + Math.sin(a2) * ri]);
+    }
+    var c0 = [cx + (rf() - 0.5) * R * 0.25, cy + (rf() - 0.5) * R * 0.25];
+    function shade(mx, my, bias) {
+      var t = 0.45 + ((mx - cx) / R * LX + (my - cy) / R * LY) * 0.55 + bias + (rf() - 0.5) * 0.18;
+      return t < 0.5 ? mix(pal[0], pal[1], t * 2) : mix(pal[1], pal[2], (t - 0.5) * 2);
+    }
+    function path(ps) { g.beginPath(); ps.forEach(function (p, k) { if (k) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); g.closePath(); }
+    function poly(ps, fill) { path(ps); g.fillStyle = fill; g.fill(); g.strokeStyle = fill; g.lineWidth = 1; g.stroke(); }
+    for (i = 0; i < n; i++) {
+      j = (i + 1) % n;
+      poly([pts[i], pts[j], inner[j], inner[i]], shade((pts[i][0] + pts[j][0]) / 2, (pts[i][1] + pts[j][1]) / 2, -0.06));
+      poly([inner[i], inner[j], c0], shade((inner[i][0] + inner[j][0] + c0[0]) / 3, (inner[i][1] + inner[j][1] + c0[1]) / 3, 0.12));
+    }
+    g.save(); path(pts); g.clip();
+    if (type === 'iron' || type === 'far') {
+      for (i = 0; i < 4; i++) {
+        var ca = rf() * 6.28, cr = rf() * R * 0.6, rx = R * (0.07 + rf() * 0.1), px = cx + Math.cos(ca) * cr, py = cy + Math.sin(ca) * cr;
+        g.fillStyle = 'rgba(0,0,0,0.38)'; g.beginPath(); g.ellipse(px, py, rx, rx * 0.8, 0, 0, 6.2832); g.fill();
+        g.strokeStyle = rgba(pal[2], 0.3); g.lineWidth = 1.5; g.beginPath(); g.ellipse(px, py, rx, rx * 0.8, 0, 0.2, 1.9); g.stroke();
+      }
+    }
+    if (type === 'ice' || type === 'comet') {
+      for (i = 0; i < 6; i++) {
+        var sa = rf() * 6.28, sr = rf() * R * 0.7, sx = cx + Math.cos(sa) * sr, sy2 = cy + Math.sin(sa) * sr, sl = R * (0.15 + rf() * 0.3), dir = rf() * 6.28;
+        g.fillStyle = 'rgba(255,255,255,' + (0.18 + rf() * 0.25) + ')';
+        g.beginPath(); g.moveTo(sx, sy2); g.lineTo(sx + Math.cos(dir) * sl, sy2 + Math.sin(dir) * sl); g.lineTo(sx + Math.cos(dir + 0.5) * sl * 0.5, sy2 + Math.sin(dir + 0.5) * sl * 0.5); g.closePath(); g.fill();
+      }
+    }
+    var sg = g.createRadialGradient(cx + LX * R * 0.5, cy + LY * R * 0.5, R * 0.2, cx, cy, R * 1.25);
+    sg.addColorStop(0, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(0,0,12,0.62)');
+    g.fillStyle = sg; g.fillRect(0, 0, N, N);
+    g.restore();
+    for (i = 0; i < n; i++) { // 光が当たる側のふち
+      j = (i + 1) % n;
+      var mx = (pts[i][0] + pts[j][0]) / 2 - cx, my = (pts[i][1] + pts[j][1]) / 2 - cy, ml = Math.sqrt(mx * mx + my * my), lit = mx / ml * LX + my / ml * LY;
+      if (lit > 0.15) { g.strokeStyle = rgba(pal[2], 0.3 + 0.45 * lit); g.lineWidth = 2.5; g.beginPath(); g.moveTo(pts[i][0], pts[i][1]); g.lineTo(pts[j][0], pts[j][1]); g.stroke(); }
+    }
+    if (type === 'crystal') { // 岩から生えた光る結晶
+      for (i = 0; i < 7; i++) {
+        var ka = rf() * 6.28, kb = R * (0.25 + rf() * 0.5), kl = R * (0.28 + rf() * 0.22), kt = Math.min(kb + kl, R * 1.08), kw = R * (0.07 + rf() * 0.05), kd = ka + (rf() - 0.5) * 0.5;
+        var bx = cx + Math.cos(ka) * kb, by = cy + Math.sin(ka) * kb, tx = bx + Math.cos(kd) * (kt - kb), ty = by + Math.sin(kd) * (kt - kb);
+        var nx = -Math.sin(kd) * kw, ny = Math.cos(kd) * kw, mxk = lerp(bx, tx, 0.35), myk = lerp(by, ty, 0.35);
+        g.globalCompositeOperation = 'lighter'; g.drawImage(glow('#e58bff'), bx - kl, by - kl, kl * 2, kl * 2); g.globalCompositeOperation = 'source-over';
+        var kg = g.createLinearGradient(bx, by, tx, ty); kg.addColorStop(0, '#8a2fd0'); kg.addColorStop(0.6, '#f0a8ff'); kg.addColorStop(1, '#ffffff');
+        g.fillStyle = kg; g.beginPath(); g.moveTo(bx, by); g.lineTo(mxk + nx, myk + ny); g.lineTo(tx, ty); g.lineTo(mxk - nx, myk - ny); g.closePath(); g.fill();
+        g.fillStyle = 'rgba(255,255,255,0.45)'; g.beginPath(); g.moveTo(bx, by); g.lineTo(mxk + nx, myk + ny); g.lineTo(tx, ty); g.closePath(); g.fill();
+      }
+    }
+    return c;
+  }
+  function buildSprites() {
+    TYPES.forEach(function (t, ti) { SPR.rock[t] = [0, 1, 2, 3].map(function (v) { return genRockSprite(t, 1000 + ti * 100 + v * 7); }); });
+    SPR.rock.comet = [genRockSprite('comet', 4242)];
+    SPR.far = genRockSprite('far', 99);
+    SPR.shard = genRockSprite('far', 314);
+  }
+
+  // ================= 画面の寸法 =================
+  var cv = $('cv'), ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1, GEO = {}, BG = null;
+  var S_FAR = 0.1, S_REACH = 0.62;
   function fitCanvas() {
     var r = cv.getBoundingClientRect(); DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = r.width; H = r.height;
     cv.width = Math.max(1, Math.round(W * DPR)); cv.height = Math.max(1, Math.round(H * DPR));
+    GEO = { strip: H * 0.085, vy: H * 0.36, sy: H * 0.84, cx: W / 2, wTop: W * 0.02, wBot: Math.min(W * 0.215, H * 0.31), rb: H * 0.08 };
+    GEO.sB = (H - GEO.vy) / (GEO.sy - GEO.vy);
+    buildBackground();
+    if (G) G.shipX = GEO.cx;
   }
-  window.addEventListener('resize', function () { if (!$('play').hidden) fitCanvas(); });
+  function laneW(s) { return lerp(GEO.wTop, GEO.wBot, s); }
+  function xOf(u, s) { return GEO.cx + u * laneW(s); }
+  function yOf(s) { return GEO.vy + (GEO.sy - GEO.vy) * s; }
+  function buildBackground() {
+    var w = Math.max(1, Math.round(W)), h = Math.max(1, Math.round(H));
+    BG = mk(w, h);
+    var g = BG.getContext('2d'), rf = mulberry(20261117), i;
+    var lg = g.createLinearGradient(0, 0, 0, h); lg.addColorStop(0, '#04050f'); lg.addColorStop(0.5, '#080b20'); lg.addColorStop(1, '#05060f');
+    g.fillStyle = lg; g.fillRect(0, 0, w, h);
+    g.globalCompositeOperation = 'lighter';
+    var neb = ['#3b1d6e', '#0e4a66', '#5a1c52', '#12306a', '#2a1a60'];
+    for (i = 0; i < 9; i++) {
+      var nx = rf() * w, ny = rf() * h * 0.75, nr = (0.2 + rf() * 0.3) * w;
+      g.globalAlpha = 0.16 + rf() * 0.14; g.drawImage(glow(neb[i % neb.length]), nx - nr, ny - nr * 0.7, nr * 2, nr * 1.4);
+    }
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    for (i = 0; i < 420; i++) {
+      var sx = rf() * w, sy = rf() * h, sz = rf() < 0.06 ? 2 : 1;
+      g.fillStyle = 'rgba(' + (200 + Math.floor(rf() * 55)) + ',' + (210 + Math.floor(rf() * 45)) + ',255,' + (0.25 + rf() * 0.6) + ')';
+      g.fillRect(sx, sy, sz, sz);
+    }
+    // 遠くの小惑星帯
+    for (i = 0; i < 90; i++) {
+      var bx = rf() * w, by = GEO.vy + (rf() - 0.5) * h * 0.12 + Math.abs(bx - w / 2) / w * h * 0.06, br = 2 + rf() * rf() * h * 0.022;
+      g.fillStyle = '#141228'; g.beginPath(); g.ellipse(bx, by, br, br * (0.6 + rf() * 0.4), rf() * 3, 0, 6.2832); g.fill();
+      g.strokeStyle = 'rgba(150,150,210,0.35)'; g.lineWidth = 1; g.beginPath(); g.ellipse(bx, by, br, br * 0.7, 0, 3.4, 4.9); g.stroke();
+    }
+    var vg = g.createRadialGradient(w / 2, h * 0.5, h * 0.3, w / 2, h * 0.5, Math.max(w, h) * 0.75);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,8,0.55)');
+    g.fillStyle = vg; g.fillRect(0, 0, w, h);
+  }
+  window.addEventListener('resize', function () { if (!$('play').hidden) fitCanvas(); if (!$('home').hidden) renderHome(); });
 
+  // ================= 粒 =================
+  var P = [];
+  function emit(o) { if (P.length > 380) P.shift(); P.push(o); }
+  function burst(r) {
+    var col = ORE[r.type === 'comet' ? 'crystal' : r.type], n = RM ? 6 : 16, i;
+    for (i = 0; i < n; i++) {
+      var a = rnd(0, 6.28), v = rnd(0.15, 0.55) * H;
+      emit({ k: 'frag', x: r.dx, y: r.dy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: 1.5, size: rnd(4, 11) * H / 768, rot: rnd(0, 6), vr: rnd(-8, 8),
+        col: i % 3 === 0 ? col.pal[2] : (i % 3 === 1 ? col.color : col.pal[1]) });
+    }
+    emit({ k: 'ring', x: r.dx, y: r.dy, t: 0, life: 0.5, size: r.dr, col: col.color });
+    G.flashAt = VT; G.flashCol = col.color; G.shakeAt = VT;
+  }
+  function stepParticles(rdt) {
+    for (var i = P.length - 1; i >= 0; i--) {
+      var p = P[i]; p.t += rdt;
+      if (p.k === 'spark') { p.x += p.vx * rdt; p.y += p.vy * rdt; p.vy += H * 0.9 * rdt; }
+      else if (p.k === 'frag') {
+        p.rot += p.vr * rdt;
+        if (p.t < 0.32) { p.x += p.vx * rdt; p.y += p.vy * rdt; p.vx *= 0.94; p.vy *= 0.94; }
+        else {
+          var k = Math.min(1, rdt * (3 + (p.t - 0.32) * 16)), tx = G.shipX, ty = GEO.sy - H * 0.03;
+          p.x += (tx - p.x) * k; p.y += (ty - p.y) * k;
+          if (Math.abs(tx - p.x) + Math.abs(ty - p.y) < H * 0.03) { p.t = p.life; G.collectAt = VT; }
+        }
+      } else if (p.k === 'steam') { p.x += p.vx * rdt; p.y += p.vy * rdt; p.size += H * 0.05 * rdt; }
+      else if (p.k === 'text') { p.y -= H * 0.045 * rdt; }
+      if (p.t >= p.life) P.splice(i, 1);
+    }
+  }
+  function drawParticles(g) {
+    P.forEach(function (p) {
+      var a = 1 - p.t / p.life;
+      if (p.k === 'spark') {
+        g.globalCompositeOperation = 'lighter'; g.strokeStyle = rgba(p.col, a); g.lineWidth = 2;
+        g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03); g.stroke(); g.globalCompositeOperation = 'source-over';
+      } else if (p.k === 'frag') {
+        g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.fillStyle = p.col; g.globalAlpha = Math.min(1, a * 3);
+        g.beginPath(); g.moveTo(-p.size, -p.size * 0.5); g.lineTo(p.size * 0.8, -p.size * 0.7); g.lineTo(p.size * 0.5, p.size * 0.8); g.lineTo(-p.size * 0.6, p.size * 0.6); g.closePath(); g.fill();
+        g.restore();
+      } else if (p.k === 'steam') {
+        g.globalAlpha = a * 0.35; g.drawImage(glow('#dff6ff'), p.x - p.size, p.y - p.size, p.size * 2, p.size * 2); g.globalAlpha = 1;
+      } else if (p.k === 'ring') {
+        var rr = p.size * (1 + p.t / p.life * 2.2);
+        g.globalCompositeOperation = 'lighter'; g.strokeStyle = rgba(p.col, a * 0.9); g.lineWidth = 5 * a + 1;
+        g.beginPath(); g.arc(p.x, p.y, rr, 0, 6.2832); g.stroke(); g.globalCompositeOperation = 'source-over';
+      } else if (p.k === 'text') {
+        g.globalAlpha = Math.min(1, a * 2.5); font(g, '400', H * 0.042, FD);
+        g.lineWidth = 5; g.strokeStyle = 'rgba(6,8,24,0.85)'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.strokeText(p.text, p.x, p.y);
+        g.fillStyle = p.col; g.fillText(p.text, p.x, p.y); g.globalAlpha = 1;
+      }
+    });
+  }
+
+  // ================= 描画 =================
   var FD = '"Dela Gothic One", "Hiragino Sans", sans-serif';
   var FB = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif';
   var FN = '"Big Shoulders Display", "Dela Gothic One", sans-serif';
-  function font(w, size, fam) { ctx.font = w + ' ' + Math.round(size) + 'px ' + fam; }
-  function txt(s, x, y, align, base) { ctx.textAlign = align || 'left'; ctx.textBaseline = base || 'alphabetic'; ctx.fillText(s, x, y); }
-  function rrect(x, y, w, h, r) {
-    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  var FT = '"Chakra Petch", "Zen Kaku Gothic New", sans-serif';
+  function font(g, w, size, fam) { g.font = w + ' ' + Math.max(8, Math.round(size)) + 'px ' + fam; }
+  function txt(g, s, x, y, align, base) { g.textAlign = align || 'left'; g.textBaseline = base || 'alphabetic'; g.fillText(s, x, y); }
+  function rr(g, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function oreIcon(g, type, x, y, r) {
+    g.save(); g.translate(x, y);
+    if (type === 'ice') {
+      g.fillStyle = '#8fe3ff'; g.beginPath(); for (var i = 0; i < 6; i++) { var a = i / 6 * 6.2832 - 1.5708; if (i) g.lineTo(Math.cos(a) * r, Math.sin(a) * r); else g.moveTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.6)'; g.beginPath(); g.moveTo(0, -r); g.lineTo(-r * 0.87, -r * 0.5); g.lineTo(0, 0); g.closePath(); g.fill();
+    } else if (type === 'iron') {
+      g.fillStyle = '#ffa25c'; g.beginPath(); g.moveTo(-r * 0.4, -r * 0.95); g.lineTo(r * 0.65, -r * 0.8); g.lineTo(r, r * 0.1); g.lineTo(r * 0.25, r); g.lineTo(-r * 0.8, r * 0.65); g.lineTo(-r, -r * 0.3); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(90,40,10,0.5)'; g.beginPath(); g.moveTo(r, r * 0.1); g.lineTo(r * 0.25, r); g.lineTo(-r * 0.8, r * 0.65); g.lineTo(0, 0.1 * r); g.closePath(); g.fill();
+    } else {
+      g.fillStyle = type === 'comet' ? '#c9f6ff' : '#e58bff'; g.beginPath(); g.moveTo(0, -r * 1.05); g.lineTo(r * 0.75, -r * 0.15); g.lineTo(0, r * 1.05); g.lineTo(-r * 0.75, -r * 0.15); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.65)'; g.beginPath(); g.moveTo(0, -r * 1.05); g.lineTo(-r * 0.75, -r * 0.15); g.lineTo(0, r * 0.1); g.closePath(); g.fill();
+    }
+    g.restore();
+  }
+
+  // 採掘船(後ろ上から見た形)
+  function drawShip(g, x, y, r, roll, flame, heat, accent, dead, phase) {
+    g.save(); g.translate(x, y); g.rotate(roll * 0.4); g.scale(Math.cos(roll * 1.2), 1);
+    if (!dead) { // エンジンの炎
+      g.globalCompositeOperation = 'lighter';
+      var hot = heat > 75, fc = hot ? '#ff8a3c' : '#6fd8ff';
+      [[-0.98, 0.95, 0.8], [0.98, 0.95, 0.8], [0, 1.02, 1]].forEach(function (e, i) {
+        var L = r * flame * e[2] * (0.82 + 0.18 * Math.sin(phase * 6.2832 + i)), ex = e[0] * r, ey = e[1] * r, w = r * 0.2;
+        var fg = g.createLinearGradient(0, ey, 0, ey + L); fg.addColorStop(0, 'rgba(255,255,255,0.95)'); fg.addColorStop(0.3, rgba(fc, 0.8)); fg.addColorStop(1, rgba(fc, 0));
+        g.fillStyle = fg; g.beginPath(); g.moveTo(ex - w, ey); g.lineTo(ex + w, ey); g.lineTo(ex, ey + L); g.closePath(); g.fill();
+        g.drawImage(glow(fc), ex - r * 0.45, ey - r * 0.35, r * 0.9, r * 0.9);
+      });
+      g.globalCompositeOperation = 'source-over';
+    }
+    var body = dead ? ['#4a4e63', '#32364a', '#1e2130'] : ['#c6cee8', '#6a7392', '#2c3148'];
+    // 左右のポッドと支柱
+    g.fillStyle = body[2]; g.fillRect(-r * 1.0, r * 0.1, r * 2.0, r * 0.24);
+    [-1, 1].forEach(function (sd) {
+      var pg = g.createLinearGradient(sd * r * 0.72, 0, sd * r * 1.24, 0); pg.addColorStop(0, body[sd < 0 ? 0 : 1]); pg.addColorStop(1, body[sd < 0 ? 1 : 2]);
+      g.fillStyle = pg; rr(g, sd * r * 0.98 - r * 0.26, -r * 0.55, r * 0.52, r * 1.55, r * 0.2); g.fill();
+      g.fillStyle = accent; g.fillRect(sd * r * 0.98 - r * 0.26, r * 0.42, r * 0.52, r * 0.1);
+      g.fillStyle = '#10121e'; g.fillRect(sd * r * 0.98 - r * 0.18, r * 0.9, r * 0.36, r * 0.12);
+    });
+    // 船体
+    var hg = g.createLinearGradient(-r * 0.55, 0, r * 0.55, 0); hg.addColorStop(0, body[0]); hg.addColorStop(0.5, body[1]); hg.addColorStop(1, body[2]);
+    g.fillStyle = hg; g.beginPath(); g.moveTo(0, -r * 1.7); g.lineTo(r * 0.4, -r * 0.6); g.lineTo(r * 0.55, r * 0.6); g.lineTo(r * 0.3, r * 1.06); g.lineTo(-r * 0.3, r * 1.06); g.lineTo(-r * 0.55, r * 0.6); g.lineTo(-r * 0.4, -r * 0.6); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -r * 1.7); g.lineTo(-r * 0.4, -r * 0.6); g.lineTo(-r * 0.55, r * 0.6); g.stroke();
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.moveTo(0, -r * 0.1); g.lineTo(r * 0.3, r * 0.5); g.lineTo(r * 0.2, r * 1.0); g.lineTo(-r * 0.2, r * 1.0); g.lineTo(-r * 0.3, r * 0.5); g.closePath(); g.fill();
+    // 操縦席
+    g.fillStyle = dead ? '#3a5560' : '#7fe9ff'; g.beginPath(); g.moveTo(0, -r * 1.1); g.lineTo(r * 0.2, -r * 0.5); g.lineTo(0, -r * 0.25); g.lineTo(-r * 0.2, -r * 0.5); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.6)'; g.beginPath(); g.moveTo(0, -r * 1.1); g.lineTo(-r * 0.2, -r * 0.5); g.lineTo(-r * 0.05, -r * 0.55); g.closePath(); g.fill();
+    // 先端のビーム発射口
+    if (!dead) { g.globalCompositeOperation = 'lighter'; g.drawImage(glow(accent), -r * 0.4, -r * 2.1, r * 0.8, r * 0.8); g.globalCompositeOperation = 'source-over'; }
+    g.fillStyle = dead ? '#555' : '#ffffff'; g.beginPath(); g.arc(0, -r * 1.7, r * 0.09, 0, 6.2832); g.fill();
+    g.restore();
+    if (heat > 50 && !dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = (heat - 50) / 50 * 0.75; g.drawImage(glow('#ff3a2a'), x - r * 2.2, y - r * 2.2, r * 4.4, r * 4.4); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+  }
+
+  function drawRock(g, r, alpha, opts) {
+    var x = r.dx, y = r.dy, rad = r.dr, type = r.type, col = ORE[type].color, size = rad / 0.44, half = size / 2;
+    var prog = clamp(1 - r.hp / r.hpMax, 0, 1), jx = 0, jy = 0;
+    if (opts.mining && !RM) { jx = rnd(-1, 1) * rad * 0.035 * (0.4 + prog); jy = rnd(-1, 1) * rad * 0.035 * (0.4 + prog); }
+    g.save(); g.globalAlpha = alpha;
+    if (type === 'comet') { // 尾
+      var dx = GEO.cx - x, dy = GEO.vy - y, dl = Math.sqrt(dx * dx + dy * dy) || 1, L = rad * 4.5; dx /= dl; dy /= dl;
+      g.globalCompositeOperation = 'lighter';
+      var tg = g.createLinearGradient(x, y, x + dx * L, y + dy * L); tg.addColorStop(0, 'rgba(200,246,255,0.75)'); tg.addColorStop(1, 'rgba(120,200,255,0)');
+      g.fillStyle = tg; g.beginPath(); g.moveTo(x - dy * rad * 0.9, y + dx * rad * 0.9); g.lineTo(x + dy * rad * 0.9, y - dx * rad * 0.9); g.lineTo(x + dx * L, y + dy * L); g.closePath(); g.fill();
+      g.globalCompositeOperation = 'source-over';
+    }
+    if (type !== 'iron') { g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha * (type === 'ice' ? 0.22 : 0.42); g.drawImage(glow(col), x - rad * 2, y - rad * 2, rad * 4, rad * 4); g.globalAlpha = alpha; g.globalCompositeOperation = 'source-over'; }
+    g.translate(x + jx, y + jy); g.rotate(r.rot0 + Math.sin(VT * r.rotV + r.rot0 * 7) * 0.1);
+    g.drawImage(SPR.rock[type][r.variant], -half, -half, size, size);
+    if (prog > 0.03) { // ひび
+      g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+      r.cracks.forEach(function (pts) {
+        var vis = prog * 1.15 * (pts.length - 1);
+        g.beginPath(); g.moveTo(0, 0);
+        for (var i = 1; i < pts.length && i - 1 < vis; i++) {
+          var f = Math.min(1, vis - (i - 1)), a = pts[i - 1], b = pts[i];
+          g.lineTo(lerp(a[0], b[0], f) * rad, lerp(a[1], b[1], f) * rad);
+        }
+        g.strokeStyle = rgba(type === 'iron' ? '#ffcf8a' : '#ffffff', 0.5 + 0.5 * prog); g.lineWidth = Math.max(1.5, rad * 0.035 * (0.6 + prog)); g.stroke();
+      });
+      g.globalAlpha = alpha * prog * 0.5; g.drawImage(glow(type === 'iron' ? '#ff9a3c' : col), -rad * 0.9, -rad * 0.9, rad * 1.8, rad * 1.8);
+      g.globalCompositeOperation = 'source-over'; g.lineCap = 'butt';
+    }
+    g.restore();
+  }
+
+  function render(rdt) {
+    var g = ctx; g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    var B = G.B, c = cadenceNow(), cvv = c === null ? 0 : c, cx = GEO.cx, sy = GEO.sy, vy = GEO.vy, sB = GEO.sB;
+    var stalled = G.T < G.stallUntil, ml = G.ml < 0 ? -1 : G.ml, i;
+    G.dispC += (cvv - G.dispC) * Math.min(1, rdt * 3);
+    var tx = cx + clamp((G.dispC - B) / 8, -1.45, 1.45) * GEO.wBot;
+    G.shipX += (tx - G.shipX) * Math.min(1, rdt * 6);
+    G.roll += (clamp((tx - G.shipX) / GEO.wBot * 1.8, -0.5, 0.5) - G.roll) * Math.min(1, rdt * 8);
+    G.cadPhase += rdt * G.dispC / 60;
+    TYPES.forEach(function (k) { G.dispGot[k] += (G.got[k] - G.dispGot[k]) * Math.min(1, rdt * 5); });
+    var pulse = Math.max(0, 1 - (VT - VB.pulseAt) / 0.3);
+    var moving = G.paused ? 0.15 : 1;
+
+    g.save();
+    if (!RM && VT - G.shakeAt < 0.3) { var sh = (1 - (VT - G.shakeAt) / 0.3) * H * 0.007; g.translate(rnd(-sh, sh), rnd(-sh, sh)); }
+
+    // 背景・流れる星
+    g.drawImage(BG, 0, 0, W, H);
+    STARS.forEach(function (s) {
+      s.r += rdt * (0.03 + 0.2 * G.dispC / 60) * s.s * moving; if (s.r > 1) s.r -= 1;
+      var rr2 = s.r * s.r * Math.max(W, H) * 0.8, x = cx + Math.cos(s.a) * rr2, y = vy + Math.sin(s.a) * rr2 * 0.8, len = 1 + s.r * 5 * G.dispC / 80;
+      g.strokeStyle = 'rgba(215,225,255,' + (0.15 + 0.55 * s.r) + ')'; g.lineWidth = 1 + s.r;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(s.a) * len, y + Math.sin(s.a) * len * 0.8); g.stroke();
+    });
+    // 行き先の巨大な小惑星
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.4 + 0.3 * pulse;
+    g.drawImage(glow('#7a5cff'), cx - H * 0.3, vy - H * 0.3, H * 0.6, H * 0.6);
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    g.save(); g.translate(cx, vy); g.rotate(VT * 0.015); var fr = H * 0.1 / 0.44; g.drawImage(SPR.far, -fr / 2, -fr / 2, fr, fr); g.restore();
+
+    // レーンの床
+    function quad(u0, u1, s0, s1) { g.beginPath(); g.moveTo(xOf(u0, s0), yOf(s0)); g.lineTo(xOf(u1, s0), yOf(s0)); g.lineTo(xOf(u1, s1), yOf(s1)); g.lineTo(xOf(u0, s1), yOf(s1)); g.closePath(); }
+    for (i = 0; i < 3; i++) {
+      var fgr = g.createLinearGradient(0, vy, 0, H); fgr.addColorStop(0, rgba(LANE_COL[i], 0)); fgr.addColorStop(1, rgba(LANE_COL[i], i === ml ? 0.2 + 0.08 * pulse : 0.07));
+      g.fillStyle = fgr; quad(i - 1.5, i - 0.5, 0, sB); g.fill();
+    }
+    G.gridPhase += rdt * (0.25 + G.dispC / 60 * 1.1) * moving;
+    g.lineWidth = 1;
+    for (i = 0; i < 10; i++) {
+      var gd = ((i + G.gridPhase) % 10) / 10, gs = Math.pow(gd, 2.2) * sB;
+      g.strokeStyle = 'rgba(140,150,240,' + (0.04 + 0.22 * gd) + ')';
+      g.beginPath(); g.moveTo(xOf(-1.5, gs), yOf(gs)); g.lineTo(xOf(1.5, gs), yOf(gs)); g.stroke();
+    }
+    // ビートに合わせて手前に走る光
+    var bt = clamp((VT - VB.pulseAt) / (60 / tempoNow()), 0, 1), bs = bt * bt * 1.05;
+    if (ml >= 0 && !G.paused) {
+      g.globalCompositeOperation = 'lighter'; g.strokeStyle = rgba(LANE_COL[ml], 0.75 * (1 - bt)); g.lineWidth = 2 + 4 * bt;
+      g.beginPath(); g.moveTo(xOf(ml - 1.5, bs), yOf(bs)); g.lineTo(xOf(ml - 0.5, bs), yOf(bs)); g.stroke(); g.globalCompositeOperation = 'source-over';
+    }
+    // 宇宙ゴミ
+    G.debris.forEach(function (d) {
+      if (!d.warned || G.T >= d.to) return;
+      var blink = d.started ? 1 : 0.5 + 0.5 * Math.sin(VT * 10);
+      g.fillStyle = 'rgba(255,70,70,' + (0.13 * blink) + ')'; quad(d.lane - 1.5, d.lane - 0.5, 0, sB); g.fill();
+      if (!d.started) return;
+      font(g, '400', H * 0.03, FD); g.fillStyle = 'rgba(255,110,110,0.9)'; txt(g, '封鎖中 ' + Math.ceil(d.to - G.T), xOf(d.lane - 1, 0.93), yOf(0.93) + H * 0.1, 'center');
+      for (var k = 0; k < 14; k++) {
+        var dd = ((k * 0.0719 + VT * 0.3 * (0.7 + (k % 3) * 0.2)) % 1), ds = dd * dd * sB, rad = H * 0.006 + H * 0.03 * ds * (0.5 + (k % 4) * 0.25), size = rad / 0.44;
+        var ux = d.lane - 1 + (((k * 37) % 9) - 4) / 11;
+        g.save(); g.globalAlpha = 0.9; g.translate(xOf(ux, ds), yOf(ds) - rad); g.rotate(k * 1.3 + VT * (0.5 + (k % 3) * 0.4));
+        g.drawImage(SPR.shard, -size / 2, -size / 2, size, size * 0.6); g.restore();
+      }
+    });
+    // レール
+    g.globalCompositeOperation = 'lighter';
+    [-1.5, -0.5, 0.5, 1.5].forEach(function (u, k) {
+      var near = ml >= 0 && (k === ml || k === ml + 1), colr = near ? LANE_COL[ml] : COL.rail;
+      g.strokeStyle = rgba(colr, near ? 0.22 : 0.1); g.lineWidth = 7; g.beginPath(); g.moveTo(xOf(u, 0), vy); g.lineTo(xOf(u, sB), H); g.stroke();
+      g.strokeStyle = rgba(colr, near ? 0.9 : 0.5); g.lineWidth = 1.5; g.beginPath(); g.moveTo(xOf(u, 0), vy); g.lineTo(xOf(u, sB), H); g.stroke();
+    });
+    g.globalCompositeOperation = 'source-over';
+
+    // 小惑星の位置を決める
+    var list = [];
+    function place(r, s, x, scale, a, isQueue) {
+      if (r.ds === null) { r.ds = s; r.dx = x; }
+      else { r.ds += (s - r.ds) * Math.min(1, rdt * 7); r.dx += (x - r.dx) * Math.min(1, rdt * 7); }
+      var sc = 0.12 + 0.88 * clamp(r.ds / S_REACH, 0, 1.9);
+      r.dr = SIZES[r.size].r * GEO.rb * sc * scale;
+      r.dy = yOf(r.ds) - r.dr * 0.35 + Math.sin(VT * 1.3 + r.rot0) * r.dr * 0.05;
+      list.push({ r: r, a: a, q: isQueue });
+    }
+    G.queue[0].rocks.forEach(function (r) { place(r, S_FAR, xOf(r.lane - 1, S_FAR), 1, 0.8, true); });
+    var w = G.wave;
+    w.rocks.forEach(function (r) {
+      if (r.state === 'dead' || r.state === 'gone') return;
+      if (r.state === 'locked') { place(r, S_REACH, xOf(r.lane - 1, S_REACH), 1.15, 1, false); return; }
+      var s;
+      if (!w.arrived) s = S_FAR + (S_REACH - S_FAR) * Math.pow(1 - clamp((w.arr - G.T) / APPROACH, 0, 1), 1.7);
+      else s = S_REACH + 0.05 * clamp((G.T - w.arr) / w.window, 0, 1);
+      place(r, s, xOf(r.lane - 1, s), 1, 1, false);
+    });
+    var gh = [];
+    G.ghosts.concat(w.rocks.filter(function (r) { return r.state === 'gone'; })).forEach(function (r) {
+      var e = (VT - r.goneVT) / 1.3; if (e >= 1) return;
+      var s = lerp(r.s0, 1.7, e * e), sc = 0.12 + 0.88 * clamp(s / S_REACH, 0, 2.4);
+      r.ds = s; r.dx = xOf(r.lane - 1, s); r.dr = SIZES[r.size].r * GEO.rb * sc; r.dy = yOf(s) - r.dr * 0.35;
+      gh.push({ r: r, a: 1 - e, q: false, ghost: true });
+    });
+    G.ghosts = G.ghosts.filter(function (r) { return VT - r.goneVT < 1.3; });
+    list = list.concat(gh).sort(function (a, b) { return a.r.ds - b.r.ds; });
+
+    var front = [];
+    list.forEach(function (it) {
+      var r = it.r;
+      if (r.ds > 1.0) { front.push(it); return; }
+      drawRock(g, r, it.a, { mining: G.mining && r === G.lock });
+      if (it.ghost) return;
+      if (it.q) { oreIcon(g, r.type, r.dx, r.dy - r.dr - H * 0.02, H * 0.011); return; }
+      // 取れ高の札
+      if (r.ds > 0.22) {
+        var ly = r.dy - r.dr - H * 0.034, n = 0, k, label = '';
+        for (k in r.yield) { label += (n ? '  ' : '') + ORE[k].name + ' ' + r.yield[k]; n++; }
+        font(g, '700', H * 0.027, FB); var tw = g.measureText(label).width + H * 0.03, th = H * 0.04;
+        g.globalAlpha = clamp((r.ds - 0.22) / 0.15, 0, 1);
+        g.fillStyle = 'rgba(6,8,24,0.78)'; rr(g, r.dx - tw / 2, ly - th / 2, tw, th, th / 2); g.fill();
+        g.strokeStyle = rgba(ORE[r.type].color, 0.8); g.lineWidth = 1.5; g.stroke();
+        g.fillStyle = ORE[r.type].color; txt(g, label, r.dx, ly + 1, 'center', 'middle');
+        g.globalAlpha = 1;
+      }
+      // 手の届く位置にいる間の表示
+      if (r.state === 'in') {
+        var left = 1 - clamp((G.T - w.arr) / w.window, 0, 1);
+        g.strokeStyle = rgba(ORE[r.type].color, 0.75); g.lineWidth = 3;
+        g.beginPath(); g.arc(r.dx, r.dy, r.dr * 1.22, -1.5708, -1.5708 + 6.2832 * left); g.stroke();
+        if (r.lane === ml && !stalled) { // ロックオン中の照準
+          var ch = clamp((G.T - G.laneSince) / LOCK_HOLD, 0, 1), br = r.dr * (1.9 - 0.55 * ch), bl = r.dr * 0.4;
+          g.strokeStyle = '#ffffff'; g.lineWidth = 3;
+          [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (q) {
+            g.beginPath(); g.moveTo(r.dx + q[0] * br, r.dy + q[1] * (br - bl)); g.lineTo(r.dx + q[0] * br, r.dy + q[1] * br); g.lineTo(r.dx + q[0] * (br - bl), r.dy + q[1] * br); g.stroke();
+          });
+        }
+      }
+      if (r.state === 'locked') {
+        var pr = clamp(1 - r.hp / r.hpMax, 0, 1);
+        g.strokeStyle = 'rgba(255,255,255,0.15)'; g.lineWidth = 6; g.beginPath(); g.arc(r.dx, r.dy, r.dr * 1.22, 0, 6.2832); g.stroke();
+        g.strokeStyle = ORE[r.type].color; g.lineWidth = 6; g.lineCap = 'round'; g.beginPath(); g.arc(r.dx, r.dy, r.dr * 1.22, -1.5708, -1.5708 + 6.2832 * pr); g.stroke(); g.lineCap = 'butt';
+        if (VT - G.lockVT < 0.7) { font(g, '700', H * 0.03, FT); g.fillStyle = '#ffffff'; g.globalAlpha = 1 - (VT - G.lockVT) / 0.7; txt(g, 'LOCK ON', r.dx, r.dy + r.dr * 1.22 + H * 0.035, 'center'); g.globalAlpha = 1; }
+      }
+    });
+
+    // 採掘ビーム
+    var sr = H * 0.05, noseY = sy - sr * 1.7;
+    if (G.mining && G.lock) {
+      var L = G.lock, colb = ORE[L.type].color, ty = L.dy + L.dr * 0.45, fl = 0.8 + 0.2 * Math.sin(VT * 40), w1 = L.dr * 0.5 * fl;
+      g.globalCompositeOperation = 'lighter';
+      var bg2 = g.createLinearGradient(0, noseY, 0, ty); bg2.addColorStop(0, 'rgba(255,255,255,0.85)'); bg2.addColorStop(1, rgba(colb, 0.25));
+      g.fillStyle = bg2; g.beginPath(); g.moveTo(G.shipX - sr * 0.1, noseY); g.lineTo(G.shipX + sr * 0.1, noseY); g.lineTo(L.dx + w1, ty); g.lineTo(L.dx - w1, ty); g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(G.shipX, noseY); g.lineTo(L.dx + rnd(-3, 3), ty); g.stroke();
+      g.drawImage(glow(colb), L.dx - L.dr * 0.9, ty - L.dr * 0.9, L.dr * 1.8, L.dr * 1.8);
+      g.globalCompositeOperation = 'source-over';
+      if (!RM && Math.random() < rdt * 40) emit({ k: 'spark', x: L.dx + rnd(-1, 1) * w1, y: ty, vx: rnd(-0.3, 0.3) * H, vy: rnd(0.05, 0.4) * H, t: 0, life: rnd(0.25, 0.5), col: Math.random() < 0.5 ? '#ffffff' : colb });
+      if ((L.type === 'ice' || L.type === 'comet') && !RM && Math.random() < rdt * 12) emit({ k: 'steam', x: G.shipX + rnd(-1, 1) * sr, y: sy + rnd(-1, 0.5) * sr, vx: rnd(-0.02, 0.02) * H, vy: -rnd(0.03, 0.08) * H, t: 0, life: 1.1, size: sr * 0.5 });
+    }
+    // 船
+    var acc = ml >= 0 ? LANE_COL[ml] : COL.sub;
+    drawShip(g, G.shipX, sy, sr, G.roll, G.paused ? 0.5 : 0.6 + G.dispC / 100 * 1.7, G.heat, acc, stalled, G.cadPhase);
+    if (VT - G.collectAt < 0.25) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - (VT - G.collectAt) / 0.25; g.drawImage(glow('#ffffff'), G.shipX - sr * 2, sy - sr * 2, sr * 4, sr * 4); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    if (stalled) {
+      font(g, '400', H * 0.045, FD); g.fillStyle = COL.danger; txt(g, '冷却中 ' + Math.ceil(G.stallUntil - G.T), G.shipX, sy - sr * 2.3, 'center');
+      if (!RM && Math.random() < rdt * 10) emit({ k: 'steam', x: G.shipX + rnd(-1, 1) * sr, y: sy, vx: rnd(-0.03, 0.03) * H, vy: -rnd(0.04, 0.1) * H, t: 0, life: 1.2, size: sr * 0.6 });
+    } else if (G.lane === -1 && !G.paused) {
+      font(g, '700', H * 0.03, FB); g.fillStyle = COL.sub; txt(g, '漂流中 ― もう少し速く', G.shipX, sy - sr * 2.3, 'center');
+    } else if (G.lane === 3) {
+      font(g, '700', H * 0.03, FB); g.fillStyle = COL.danger; txt(g, '回しすぎ ― 熱が急上昇', G.shipX, sy - sr * 2.3, 'center');
+    }
+    front.forEach(function (it) { drawRock(g, it.r, it.a * clamp(1 - (it.r.ds - 1) / 0.6, 0, 1), {}); });
+    stepParticles(rdt); drawParticles(g);
+    g.restore();
+
+    drawHud(g, B, ml, stalled, pulse);
+    var fa = VT - G.flashAt;
+    if (fa < 0.35) { g.globalCompositeOperation = 'lighter'; g.fillStyle = rgba(G.flashCol, 0.16 * (1 - fa / 0.35)); g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over'; }
+  }
+
+  function drawHud(g, B, ml, stalled, pulse) {
+    var strip = GEO.strip, cx = GEO.cx, i;
+    // ---- 上: 区間の帯 ----
+    var x0 = W * 0.03, x1 = W * 0.83, y0 = strip * 0.3, y1 = strip * 0.9, V0 = 40, V1 = 105;
+    g.fillStyle = 'rgba(8,10,26,0.9)'; g.fillRect(0, 0, W, strip);
+    g.fillStyle = rgba(COL.rail, 0.5); g.fillRect(0, strip - 1, W, 1);
+    function X(t) { return x0 + (x1 - x0) * t / G.total; }
+    function Y(v) { return y1 - (y1 - y0) * (clamp(v, V0, V1) - V0) / (V1 - V0); }
+    var cur = phaseIdx(G.T);
+    G.phases.forEach(function (p, k) {
+      var px = X(p.start) + 1, pw = X(p.start + p.dur) - X(p.start) - 2;
+      g.fillStyle = rgba(COL.rail, k === cur ? 0.22 : 0.1); g.fillRect(px, Y(p.base + 12), pw, Y(p.base - 12) - Y(p.base + 12));
+      g.fillStyle = rgba(ORE.iron.color, k === cur ? 0.6 : 0.25); g.fillRect(px, Y(p.base + 4), pw, Y(p.base - 4) - Y(p.base + 4));
+      font(g, '700', strip * 0.24, FB); g.fillStyle = k === cur ? COL.text : COL.sub;
+      if (g.measureText(p.name).width < pw - 8) txt(g, p.name, px + 5, strip * 0.06, 'left', 'top');
+    });
+    g.strokeStyle = COL.text; g.lineWidth = 1.5; g.beginPath();
+    G.trace.forEach(function (p, k) { var x = X(p[0]), y = Y(p[1]); if (k) g.lineTo(x, y); else g.moveTo(x, y); });
+    g.stroke();
+    g.strokeStyle = COL.go; g.lineWidth = 2; g.beginPath(); g.moveTo(X(G.T), 0); g.lineTo(X(G.T), strip); g.stroke();
+    font(g, '900', strip * 0.62, FN); g.fillStyle = COL.text; txt(g, mmss(G.total - G.T), W * 0.97, strip * 0.52, 'right', 'middle');
+    var tw0 = g.measureText(mmss(G.total - G.T)).width; font(g, '700', strip * 0.26, FB); g.fillStyle = COL.sub; txt(g, '残り', W * 0.97 - tw0 - 8, strip * 0.58, 'right', 'middle');
+
+    // ---- 左: 回転数とレーンのゲージ ----
+    var lx = W * 0.03, cs = String(Math.round(G.dispC));
+    font(g, '900', H * 0.105, FN); g.fillStyle = COL.text; txt(g, cs, lx, strip + H * 0.115);
+    var cw = g.measureText(cs).width; font(g, '700', H * 0.026, FT); g.fillStyle = COL.sub; txt(g, 'RPM', lx + cw + 8, strip + H * 0.115);
+    var gx = lx, gw = W * 0.02, gy0 = strip + H * 0.16, gy1 = H * 0.76, span = 20;
+    function GY(v) { return gy1 - (gy1 - gy0) * (clamp(v, B - span, B + span) - (B - span)) / (span * 2); }
+    g.fillStyle = 'rgba(238,241,255,0.08)'; rr(g, gx, gy0, gw, gy1 - gy0, gw / 2); g.fill();
+    g.fillStyle = 'rgba(255,93,93,0.35)'; g.fillRect(gx, gy0, gw, GY(B + 12) - gy0);
+    [[4, 12, 2], [-4, 4, 1], [-12, -4, 0]].forEach(function (b) {
+      var on = b[2] === ml, ya = GY(B + b[1]), yb = GY(B + b[0]);
+      g.fillStyle = rgba(LANE_COL[b[2]], on ? 0.95 : 0.4); g.fillRect(gx, ya + 1, gw, yb - ya - 2);
+      var my = (ya + yb) / 2, tx = gx + gw + W * 0.022;
+      oreIcon(g, TYPES[b[2]], tx, my - H * 0.012, H * (on ? 0.017 : 0.013));
+      font(g, on ? '700' : '500', H * (on ? 0.03 : 0.024), FB); g.fillStyle = on ? LANE_COL[b[2]] : rgba(LANE_COL[b[2]], 0.7);
+      txt(g, LANE_NAME[b[2]], tx + H * 0.026, my - H * 0.012, 'left', 'middle');
+      font(g, '700', H * 0.022, FT); g.fillStyle = on ? COL.text : COL.sub;
+      var lo = Math.round(B) + b[0] + (b[2] === 0 ? 0 : (b[2] === 1 ? 0 : 1)), hi = Math.round(B) + b[1] - (b[2] === 0 ? 1 : 0);
+      txt(g, lo + '–' + hi, tx - H * 0.012, my + H * 0.02, 'left', 'middle');
+    });
+    var my2 = GY(G.dispC);
+    g.globalCompositeOperation = 'lighter'; g.drawImage(glow('#ffffff'), gx + gw / 2 - H * 0.03, my2 - H * 0.03, H * 0.06, H * 0.06); g.globalCompositeOperation = 'source-over';
+    g.fillStyle = '#ffffff'; g.fillRect(gx - 4, my2 - 2, gw + 8, 4);
+    g.beginPath(); g.moveTo(gx + gw + 5, my2); g.lineTo(gx + gw + 14, my2 - 7); g.lineTo(gx + gw + 14, my2 + 7); g.closePath(); g.fill();
+
+    // ---- 右: 依頼・熱・連鎖 ----
+    var pw2 = Math.max(W * 0.2, H * 0.27), px2 = W * 0.975 - pw2, py = strip + H * 0.025, rowH = H * 0.05, radar = S.up.radar > 0;
+    var ph2 = H * 0.045 + rowH * 3 + H * 0.06 + H * 0.085 + (radar ? H * 0.05 : 0);
+    g.fillStyle = 'rgba(8,10,26,0.62)'; rr(g, px2, py, pw2, ph2, 12); g.fill();
+    g.strokeStyle = rgba(COL.rail, 0.45); g.lineWidth = 1; g.stroke();
+    font(g, '700', H * 0.02, FT); g.fillStyle = COL.sub; txt(g, 'ORDERS  今日の依頼', px2 + 12, py + H * 0.03);
+    G.missions.forEach(function (m, k) {
+      var y = py + H * 0.045 + k * rowH + rowH / 2, col = ORE[m.type].color;
+      var bx = px2 + H * 0.055, bw = pw2 - H * 0.055 - H * 0.125, f = clamp(G.dispGot[m.type] / m.need, 0, 1);
+      var pop = m.done && VT - m.doneVT < 0.6 ? 1 + 0.4 * (1 - (VT - m.doneVT) / 0.6) : 1;
+      oreIcon(g, m.type, px2 + H * 0.03, y, H * 0.016 * pop);
+      g.fillStyle = 'rgba(238,241,255,0.12)'; rr(g, bx, y - H * 0.009, bw, H * 0.018, H * 0.009); g.fill();
+      if (f > 0.01) { g.fillStyle = m.done ? COL.go : col; rr(g, bx, y - H * 0.009, Math.max(H * 0.018, bw * f), H * 0.018, H * 0.009); g.fill(); }
+      font(g, '900', H * 0.03, FN); g.fillStyle = m.done ? COL.go : COL.text;
+      txt(g, Math.round(G.dispGot[m.type]) + '/' + m.need, px2 + pw2 - 10, y + 1, 'right', 'middle');
+    });
+    // 熱
+    var hy = py + H * 0.045 + rowH * 3 + H * 0.028, hbx = px2 + H * 0.055, hbw = pw2 - H * 0.055 - 12, hf = clamp(G.heat / 100, 0, 1);
+    var hot = G.heat >= 75, hcol = hot ? COL.danger : (G.heat >= 45 ? '#ff9f43' : ORE.ice.color);
+    font(g, '700', H * 0.026, FB); g.fillStyle = hot && Math.sin(VT * 12) > 0 ? COL.danger : COL.sub; txt(g, '熱', px2 + 12, hy + 1, 'left', 'middle');
+    g.fillStyle = 'rgba(238,241,255,0.12)'; rr(g, hbx, hy - H * 0.012, hbw, H * 0.024, H * 0.012); g.fill();
+    if (hf > 0.01) { g.fillStyle = hcol; rr(g, hbx, hy - H * 0.012, Math.max(H * 0.024, hbw * hf), H * 0.024, H * 0.012); g.fill(); }
+    g.fillStyle = 'rgba(6,8,24,0.8)'; g.fillRect(hbx + hbw * 0.75, hy - H * 0.012, 2, H * 0.024);
+    // 連鎖
+    var cy2 = hy + H * 0.075;
+    font(g, '900', H * 0.07, FN); g.fillStyle = G.chain > 0 ? COL.text : COL.sub; txt(g, String(G.chain), px2 + 12, cy2 + H * 0.012);
+    var cw2 = g.measureText(String(G.chain)).width;
+    font(g, '700', H * 0.024, FB); g.fillStyle = COL.go; txt(g, '連鎖' + (chainMult() > 1 ? '  取れ高 ×' + chainMult() : ''), px2 + 20 + cw2, cy2 + H * 0.01);
+    if (knobMult() > 1) { font(g, '700', H * 0.02, FB); g.fillStyle = COL.go; txt(g, 'ドリル強化 ×1.2', px2 + pw2 - 10, cy2 - H * 0.022, 'right'); }
+    if (radar) {
+      var ry = cy2 + H * 0.05; font(g, '700', H * 0.02, FT); g.fillStyle = COL.sub; txt(g, 'RADAR  2 つ先', px2 + 12, ry + 1, 'left', 'middle');
+      var q = G.queue[1].rocks;
+      for (i = 0; i < 3; i++) {
+        var rx = px2 + pw2 - H * 0.115 + i * H * 0.04, rk = null; q.forEach(function (r) { if (r.lane === i) rk = r; });
+        if (rk) oreIcon(g, rk.type, rx, ry, H * 0.013); else { g.fillStyle = 'rgba(238,241,255,0.2)'; g.fillRect(rx - 4, ry - 1, 8, 2); }
+      }
+    }
+
+    // ---- 中央: 警告バナーとトースト ----
+    var b = G.banner, ty = strip + H * 0.03;
+    if (b && VT < b.until) {
+      var a = Math.min(1, (VT - b.at) / 0.2, (b.until - VT) / 0.3), bw2 = Math.min(W * 0.46, H * 0.72), bh = H * 0.115, bx2 = cx - bw2 / 2;
+      g.save(); g.globalAlpha = a;
+      g.fillStyle = 'rgba(8,10,24,0.86)'; rr(g, bx2, ty, bw2, bh, 8); g.fill();
+      g.save(); rr(g, bx2, ty, bw2, bh, 8); g.clip(); g.fillStyle = b.color;
+      var off = (VT * 24) % 20;
+      for (var sx = -40; sx < bw2 + 40; sx += 20) {
+        [ty, ty + bh - 6].forEach(function (yy) { g.beginPath(); g.moveTo(bx2 + sx + off, yy); g.lineTo(bx2 + sx + off + 10, yy); g.lineTo(bx2 + sx + off + 4, yy + 6); g.lineTo(bx2 + sx + off - 6, yy + 6); g.closePath(); g.fill(); });
+      }
+      g.restore();
+      g.strokeStyle = b.color; g.lineWidth = 1.5; rr(g, bx2, ty, bw2, bh, 8); g.stroke();
+      font(g, '700', H * 0.018, FT); g.fillStyle = b.color; txt(g, b.tag, cx, ty + H * 0.03, 'center');
+      font(g, '400', H * 0.036, FD); g.fillStyle = COL.text; txt(g, b.text, cx, ty + H * 0.07, 'center');
+      font(g, '700', H * 0.021, FB); g.fillStyle = COL.sub; txt(g, b.sub, cx, ty + H * 0.098, 'center');
+      g.restore();
+      ty += bh + 8;
+    }
+    G.toasts = G.toasts.filter(function (t) { return VT - t.at < t.sec; });
+    G.toasts.forEach(function (t, k) {
+      var age = VT - t.at, a2 = Math.min(1, age / 0.15, (t.sec - age) / 0.3);
+      g.globalAlpha = a2; var fs = H * 0.034; font(g, '400', fs, FD);
+      var maxW = W * 0.46, mw = g.measureText(t.text).width;
+      if (mw > maxW) { fs *= maxW / mw; font(g, '400', fs, FD); mw = g.measureText(t.text).width; }
+      var tw = mw + H * 0.06, th = H * 0.058, yy = ty + k * (th + 6);
+      g.fillStyle = 'rgba(6,8,24,0.84)'; rr(g, cx - tw / 2, yy, tw, th, th / 2); g.fill();
+      g.fillStyle = t.color; txt(g, t.text, cx, yy + th / 2 + 1, 'center', 'middle');
+    });
+    g.globalAlpha = 1;
+    if (stalled || G.heat >= 75) { // 熱の警告のふち
+      var ea = stalled ? 0.5 : 0.25 + 0.25 * Math.sin(VT * 10);
+      var eg = g.createRadialGradient(cx, H / 2, H * 0.45, cx, H / 2, Math.max(W, H) * 0.72); eg.addColorStop(0, 'rgba(255,60,40,0)'); eg.addColorStop(1, 'rgba(255,60,40,' + ea + ')');
+      g.fillStyle = eg; g.fillRect(0, strip, W, H - strip);
+    }
   }
 
   var STARS = [];
-  for (var si = 0; si < 220; si++) STARS.push({ a: Math.random() * Math.PI * 2, r: Math.random(), s: 0.3 + Math.random() * 0.7 });
-
-  var COL = { low: '#4cc9f0', mid: '#ffd166', high: '#ff4fd8', danger: '#ff5d5d', text: '#eef1ff', sub: '#9aa3cf', space: '#070a1a' };
-  var LANE_COL = [COL.low, COL.mid, COL.high];
-
-  function draw(dt) {
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    var ph = G.phases[phaseIndex(G.T)];
-    var c = cadenceNow(); var cRaw = c === null ? 0 : c;
-    G.dispC += (cRaw - G.dispC) * Math.min(1, dt * 2.5); // 1 秒ごとの値をなめらかに見せる
-    var Tv = G.T + (G.paused ? 0 : G.clock - Math.floor(G.clock)); // 判定の間の時間も滑らかに
-    var stalled = G.T < G.stallUntil;
-
-    // 背景と星
-    ctx.fillStyle = COL.space; ctx.fillRect(0, 0, W, H);
-    var stripH = H * 0.13, y0 = stripH + (H - stripH) * 0.3, yHit = H * 0.76, cx = W / 2;
-    var speedStars = G.paused ? 0 : (G.dispC / 60);
-    STARS.forEach(function (s) {
-      s.r += dt * 0.25 * speedStars * s.s; if (s.r > 1) s.r -= 1;
-      var rr = Math.pow(s.r, 2) * Math.max(W, H) * 0.75;
-      var x = cx + Math.cos(s.a) * rr, y = y0 + Math.sin(s.a) * rr * 0.75;
-      ctx.fillStyle = 'rgba(220,226,255,' + (0.25 + 0.6 * s.r) + ')';
-      ctx.fillRect(x, y, 1 + s.r * 2, 1 + s.r * 2);
-    });
-    // 小惑星(行き先)
-    var ag = ctx.createRadialGradient(cx - H * 0.02, y0 - H * 0.03, H * 0.01, cx, y0, H * 0.12);
-    ag.addColorStop(0, '#8d7a6a'); ag.addColorStop(1, '#2a2230');
-    ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(cx, y0, H * 0.1, 0, Math.PI * 2); ctx.fill();
-
-    // レーン(遠近)
-    var K = 5, wTop = W * 0.03, wHit = W * 0.34;
-    function sOf(d) { return (1 / (1 + K * d) - 1 / (1 + K)) / (1 - 1 / (1 + K)); }
-    function yOf(s) { return y0 + (yHit - y0) * s; }
-    function hwOf(s) { return wTop + (wHit - wTop) * s; }
-    function xOf(u, s) { return cx + (u / 1.5) * hwOf(s); }
-    var sB = (H - y0) / (yHit - y0);
-    function laneQuad(u0, u1, s0, s1) {
-      ctx.beginPath(); ctx.moveTo(xOf(u0, s0), yOf(s0)); ctx.lineTo(xOf(u1, s0), yOf(s0));
-      ctx.lineTo(xOf(u1, s1), yOf(s1)); ctx.lineTo(xOf(u0, s1), yOf(s1)); ctx.closePath();
-    }
-    var pulse = Math.max(0, 1 - (G.clock - VB.pulseAt) / 0.3);
-    [[-1.5, -0.5, 0], [-0.5, 0.5, 1], [0.5, 1.5, 2]].forEach(function (L) {
-      ctx.fillStyle = L[2] === 0 ? 'rgba(76,201,240,0.07)' : (L[2] === 1 ? 'rgba(255,209,102,' + (0.08 + 0.06 * pulse) + ')' : 'rgba(255,79,216,0.07)');
-      laneQuad(L[0], L[1], 0, sB); ctx.fill();
-    });
-    [-1.5, -0.5, 0.5, 1.5].forEach(function (u, k) {
-      ctx.strokeStyle = k === 0 ? COL.low : (k === 3 ? COL.high : COL.mid);
-      ctx.globalAlpha = 0.55 + 0.4 * pulse; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(xOf(u, 0), y0); ctx.lineTo(xOf(u, sB), H); ctx.stroke();
-    });
-    ctx.globalAlpha = 1;
-    // 拍ごとに流れる横線
-    for (var k = 0; k < 6; k++) {
-      var bd = (k + 1 - Math.min(1, (G.clock - VB.pulseAt) * ph.target / 60)) / 6;
-      if (bd <= 0 || bd > 1) continue;
-      var bs = sOf(bd);
-      ctx.strokeStyle = 'rgba(255,209,102,' + (0.08 + 0.3 * bs) + ')'; ctx.lineWidth = 1 + 2 * bs;
-      ctx.beginPath(); ctx.moveTo(xOf(-0.5, bs), yOf(bs)); ctx.lineTo(xOf(0.5, bs), yOf(bs)); ctx.stroke();
-    }
-
-    // 物体(レア鉱脈・隕石群)
-    G.events.forEach(function (e) {
-      var d0 = (e.t - Tv) / LOOK, d1 = (e.t + e.dur - Tv) / LOOK;
-      if (d1 < -0.3 || d0 > 1) return;
-      var s0 = sOf(clamp(d0, -0.3, 1)), s1 = sOf(clamp(d1, -0.3, 1));
-      if (e.type === 'rare') {
-        var g = ctx.createLinearGradient(0, yOf(s1), 0, yOf(s0));
-        g.addColorStop(0, 'rgba(255,79,216,0.15)'); g.addColorStop(1, 'rgba(255,79,216,0.6)');
-        ctx.fillStyle = g; laneQuad(0.55, 1.45, s1, s0); ctx.fill();
-        for (var q = 0; q < 10; q++) {
-          var dq = d0 + (d1 - d0) * (q + 0.5) / 10; if (dq < -0.2 || dq > 1) continue;
-          var sq = sOf(dq), r = 3 + 9 * sq;
-          ctx.fillStyle = '#ffb3f0'; ctx.beginPath();
-          var qx = xOf(1 + ((q * 37) % 7 - 3) * 0.1, sq), qy = yOf(sq);
-          ctx.moveTo(qx, qy - r); ctx.lineTo(qx + r * 0.7, qy); ctx.lineTo(qx, qy + r); ctx.lineTo(qx - r * 0.7, qy); ctx.closePath(); ctx.fill();
-        }
-      } else {
-        ctx.fillStyle = 'rgba(255,93,93,0.18)'; laneQuad(-0.45, 1.45, s1, s0); ctx.fill();
-        for (var m = 0; m < 14; m++) {
-          var dm = d0 + (d1 - d0) * ((m * 0.37) % 1); if (dm < -0.2 || dm > 1) continue;
-          var sm = sOf(dm), rm = 4 + 12 * sm;
-          ctx.fillStyle = '#7a4a3a'; ctx.strokeStyle = '#ff8a6a'; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(xOf(-0.3 + ((m * 53) % 17) / 10, sm), yOf(sm), rm, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        }
-      }
-    });
-
-    // ヒットライン
-    ctx.strokeStyle = 'rgba(238,241,255,0.8)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(xOf(-1.5, 1), yHit); ctx.lineTo(xOf(1.5, 1), yHit); ctx.stroke();
-
-    // 採掘船
-    var dev = G.dispC - ph.target;
-    var u = clamp(dev / BAND * 0.5, -1.25, 1.25);
-    var lane = laneOf(G.dispC, ph.target);
-    var sx = xOf(u, 1), sr = H * 0.045 * (1 + 0.15 * pulse);
-    var shipCol = stalled ? '#6b7090' : LANE_COL[lane];
-    ctx.shadowColor = shipCol; ctx.shadowBlur = stalled ? 0 : 26;
-    ctx.fillStyle = shipCol;
-    ctx.beginPath(); ctx.moveTo(sx, yHit - sr * 1.3); ctx.lineTo(sx + sr, yHit + sr * 0.7); ctx.lineTo(sx, yHit + sr * 0.3); ctx.lineTo(sx - sr, yHit + sr * 0.7); ctx.closePath(); ctx.fill();
-    ctx.shadowBlur = 0;
-    if (G.clock - G.sparkAt < 0.35 && !stalled) {
-      ctx.strokeStyle = shipCol; ctx.lineWidth = 2;
-      for (var sp = 0; sp < 6; sp++) {
-        var a = -Math.PI / 2 + (sp - 2.5) * 0.35, l = sr * (1.2 + (G.clock - G.sparkAt) * 4);
-        ctx.beginPath(); ctx.moveTo(sx + Math.cos(a) * sr * 1.3, yHit - sr * 1.3 + Math.sin(a) * 2); ctx.lineTo(sx + Math.cos(a) * l * 1.4, yHit - sr * 1.3 + Math.sin(a) * l); ctx.stroke();
-      }
-    }
-
-    // レーン名と回転数の範囲
-    font('700', H * 0.026, FB);
-    [[-1, '遅い 〜' + (ph.target - BAND - 1), COL.low], [0, '基準 ' + (ph.target - BAND) + '〜' + (ph.target + BAND), COL.mid], [1, '速い ' + (ph.target + BAND + 1) + '〜', COL.high]].forEach(function (L) {
-      ctx.fillStyle = L[2]; txt(L[1], xOf(L[0], 1.2), H * 0.835, 'center');
-    });
-
-    // 予告
-    var ne = nextEvent(G.T - 0.01), ae = eventAt(G.T);
-    if (ae) {
-      font('400', H * 0.042, FD);
-      ctx.fillStyle = ae.type === 'rare' ? COL.high : COL.danger;
-      txt(ae.type === 'rare' ? 'レア鉱脈! 速く漕いで掘る(熱に注意)' : '隕石群! 遅いレーンへ', cx, y0 - H * 0.13, 'center');
-    } else if (ne && ne.t - Tv <= LOOK) {
-      var left = Math.ceil(ne.t - Tv);
-      font('400', H * 0.042, FD);
-      ctx.fillStyle = ne.type === 'rare' ? COL.high : COL.danger;
-      txt((ne.type === 'rare' ? 'レア鉱脈 接近 ' : '隕石群 接近 ') + left, cx, y0 - H * 0.13, 'center');
-      font('700', H * 0.026, FB); ctx.fillStyle = COL.text;
-      txt(ne.type === 'rare' ? '速いレーンで掘れます(行くかは自由)' : '遅いレーンに逃げてください', cx, y0 - H * 0.085, 'center');
-    }
-
-    // 左: 回転数
-    var hudTop = stripH + H * 0.03;
-    ctx.fillStyle = COL.text; font('900', H * 0.13, FN);
-    var cs = String(Math.round(G.dispC));
-    txt(cs, W * 0.03, hudTop + H * 0.11);
-    var cw = ctx.measureText(cs).width;
-    font('700', H * 0.03, FB); ctx.fillStyle = COL.sub; txt('rpm', W * 0.03 + cw + 8, hudTop + H * 0.11);
-    ctx.fillStyle = COL.mid; font('700', H * 0.032, FB); txt('目標 ' + ph.target + ' ±' + BAND, W * 0.03, hudTop + H * 0.155);
-    if (G.knobDone[phaseIndex(G.T)]) { ctx.fillStyle = COL.mid; font('700', H * 0.026, FB); txt('ドリル強化中 ×1.2', W * 0.03, hudTop + H * 0.195); }
-
-    // 右: 鉱石
-    ctx.textAlign = 'right';
-    font('700', H * 0.028, FB); ctx.fillStyle = COL.sub; txt('鉱石', W * 0.97, hudTop + H * 0.03, 'right');
-    ctx.fillStyle = COL.text; font('900', H * 0.085, FN); txt(fmt(G.ore), W * 0.97, hudTop + H * 0.105, 'right');
-    font('700', H * 0.028, FB); ctx.fillStyle = COL.high; txt('レア ' + G.rare, W * 0.97, hudTop + H * 0.15, 'right');
-
-    // 熱ゲージ(右端)
-    var gx = W * 0.955, gy0 = H * 0.5, gh = H * 0.22, gw = W * 0.018;
-    ctx.fillStyle = 'rgba(238,241,255,0.12)'; rrect(gx, gy0, gw, gh, gw / 2); ctx.fill();
-    var hf = clamp(G.heat / 100, 0, 1);
-    ctx.fillStyle = hf > 0.75 ? COL.danger : (hf > 0.45 ? '#ff9f43' : COL.low);
-    rrect(gx, gy0 + gh * (1 - hf), gw, gh * hf, gw / 2); ctx.fill();
-    font('700', H * 0.026, FB); ctx.fillStyle = COL.sub; txt('熱', gx + gw / 2, gy0 + gh + H * 0.035, 'center');
-    if (stalled) { ctx.fillStyle = COL.danger; font('400', H * 0.05, FD); txt('停止中 ' + Math.ceil(G.stallUntil - Tv), cx, yHit - H * 0.12, 'center'); }
-
-    // 中央上: コンボ
-    // 右: コンボ(中央の上は予告用に空けておく)
-    ctx.fillStyle = G.combo > 0 ? COL.text : COL.sub; font('900', H * 0.06, FN);
-    txt(String(G.combo), W * 0.97, hudTop + H * 0.235, 'right');
-    font('700', H * 0.026, FB); ctx.fillStyle = COL.mid;
-    txt('コンボ' + (comboMult() > 1 ? ' 鉱石 ×' + comboMult() : ''), W * 0.97, hudTop + H * 0.275, 'right');
-
-    // トースト
-    var ty = y0 + H * 0.12;
-    G.toasts = G.toasts.filter(function (t) { return G.clock - t.at < t.sec; });
-    G.toasts.forEach(function (t, k) {
-      var age = G.clock - t.at, a = Math.min(1, age / 0.15, (t.sec - age) / 0.3);
-      ctx.globalAlpha = a; font('400', H * 0.04, FD);
-      var tw = ctx.measureText(t.text).width + H * 0.06, th = H * 0.065, yy = ty + k * (th + 8);
-      ctx.fillStyle = 'rgba(7,10,26,0.82)'; rrect(cx - tw / 2, yy, tw, th, th / 2); ctx.fill();
-      ctx.fillStyle = t.color; txt(t.text, cx, yy + th / 2 + 1, 'center', 'middle');
-    });
-    ctx.globalAlpha = 1;
-
-    // 当たった・オーバーヒートの赤いふち
-    var fa = G.clock - G.flashAt;
-    if (fa < 0.6) { ctx.strokeStyle = 'rgba(255,93,93,' + (0.8 * (1 - fa / 0.6)) + ')'; ctx.lineWidth = 18; ctx.strokeRect(0, 0, W, H); }
-
-    drawStrip(stripH, Tv);
-  }
-
-  // 上の細いコース表(区間・ノブの旗・自分の回転数)
-  function drawStrip(h, Tv) {
-    var x0 = W * 0.03, x1 = W * 0.97, y0 = h * 0.18, y1 = h * 0.86, V0 = 45, V1 = 100;
-    ctx.fillStyle = 'rgba(17,22,46,0.92)'; ctx.fillRect(0, 0, W, h);
-    function X(t) { return x0 + (x1 - x0) * t / G.total; }
-    function Y(v) { return y1 - (y1 - y0) * (clamp(v, V0, V1) - V0) / (V1 - V0); }
-    var cur = phaseIndex(G.T);
-    G.phases.forEach(function (p, i) {
-      ctx.fillStyle = i === cur ? 'rgba(255,209,102,0.45)' : 'rgba(255,209,102,0.16)';
-      ctx.fillRect(X(p.start) + 1, Y(p.target + BAND), X(p.start + p.dur) - X(p.start) - 2, Y(p.target - BAND) - Y(p.target + BAND));
-      font('700', h * 0.17, FB); ctx.fillStyle = i === cur ? COL.text : COL.sub;
-      if (ctx.measureText(p.name).width < X(p.start + p.dur) - X(p.start) - 10) txt(p.name, X(p.start) + 6, h * 0.16, 'left', 'top');
-    });
-    ctx.strokeStyle = COL.text; ctx.lineWidth = 1.6; ctx.beginPath();
-    G.trace.forEach(function (p, i) { var x = X(p[0]), y = Y(p[1]); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
-    ctx.stroke();
-    ctx.strokeStyle = COL.mid; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(X(Tv), 0); ctx.lineTo(X(Tv), h); ctx.stroke();
-    font('700', h * 0.2, FB); ctx.fillStyle = COL.text;
-    txt('残り ' + mmss((G.total - Tv) / 1), x1, h * 0.95, 'right', 'bottom');
-  }
+  for (var si = 0; si < 110; si++) STARS.push({ a: Math.random() * 6.2832, r: Math.random(), s: 0.3 + Math.random() * 0.7 });
 
   // ================= ループ =================
   var lastTs = null;
   function frame(ts) {
     if ($('play').hidden || !G) { lastTs = null; return; }
-    var dt = lastTs === null ? 0 : Math.min(0.1, (ts - lastTs) / 1000);
-    lastTs = ts;
+    var rdt = lastTs === null ? 0 : Math.min(0.1, (ts - lastTs) / 1000);
+    lastTs = ts; VT += rdt;
     if (!G.finished) {
       autoPauseCheck();
-      // 漕ぐのをやめたら自動で一時停止(20 rpm 未満が 3 秒)
       if (!G.paused) {
         var c = cadenceNow();
-        G.clock += dt * SPEED;
-        while (G.clock >= G.T + 1 && !G.finished) {
-          if (c !== null && c < 20) { G.lowRun++; if (G.lowRun >= 3) { pauseGame('stopped'); break; } } else G.lowRun = 0;
-          tick(); G.T++;
-          if (G.T >= G.total) finishGame();
+        if (c !== null && c < 20) { G.lowT += rdt * SPEED; if (G.lowT >= 3) pauseGame('stopped'); } else G.lowT = 0;
+        if (!G.paused) {
+          var steps = Math.max(1, Math.ceil(rdt * SPEED / 0.25)), h = rdt * SPEED / steps;
+          for (var i = 0; i < steps && !G.finished; i++) logic(h);
         }
-      } else {
-        G.clock = G.T; // 一時停止中は時計を止める
       }
     }
-    visualBeat(dt);
-    draw(dt);
+    if ($('play').hidden) { lastTs = null; return; }
+    visualBeat(rdt); render(rdt);
     requestAnimationFrame(frame);
   }
 
-  // ================= 画面の切り替え =================
-  var chosenMin = 20;
-  Array.prototype.forEach.call(document.querySelectorAll('.menus button'), function (b) {
-    b.addEventListener('click', function () {
-      chosenMin = parseInt(b.getAttribute('data-min'), 10);
-      Array.prototype.forEach.call(document.querySelectorAll('.menus button'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+  // ================= 拠点の絵 =================
+  function drawBase(c, level) {
+    var r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (!r.width) return;
+    c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
+    var g = c.getContext('2d'), w = r.width, h = r.height, rf = mulberry(7), i;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var lg = g.createLinearGradient(0, 0, w, h); lg.addColorStop(0, '#04050f'); lg.addColorStop(1, '#0b0d24'); g.fillStyle = lg; g.fillRect(0, 0, w, h);
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.3;
+    g.drawImage(glow('#3b1d6e'), w * 0.45, -h * 0.6, w * 0.7, h * 1.8); g.drawImage(glow('#0e4a66'), -w * 0.1, -h * 0.2, w * 0.5, h * 1.4);
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    for (i = 0; i < 160; i++) { g.fillStyle = 'rgba(220,228,255,' + (0.2 + rf() * 0.6) + ')'; g.fillRect(rf() * w, rf() * h, rf() < 0.08 ? 2 : 1, 1); }
+    // 惑星
+    var pr = h * 0.95, pcx = w * 0.1, pcy = h * 1.25, pg = g.createRadialGradient(pcx - pr * 0.3, pcy - pr * 0.5, pr * 0.1, pcx, pcy, pr);
+    pg.addColorStop(0, '#3fa7a0'); pg.addColorStop(0.6, '#1b4f6a'); pg.addColorStop(1, '#081526');
+    g.fillStyle = pg; g.beginPath(); g.arc(pcx, pcy, pr, 0, 6.2832); g.fill();
+    g.strokeStyle = 'rgba(160,220,230,0.35)'; g.lineWidth = h * 0.012; g.beginPath(); g.ellipse(pcx, pcy - pr * 0.1, pr * 1.5, pr * 0.28, -0.25, 3.5, 6.0); g.stroke();
+    // 拠点
+    var cx = w * 0.55, cy = h * 0.47, u = h * 0.1;
+    var slots = [[-2.3, 0, 'mod'], [2.3, 0, 'mod'], [0, -2.0, 'mod'], [0, 2.0, 'mod'], [-4.4, 0, 'solar'], [4.4, 0, 'solar'], [-2.3, -2.0, 'dish'], [2.3, 2.0, 'mod'],
+      [2.3, -2.0, 'mod'], [-2.3, 2.0, 'mod'], [-6.5, 0, 'solar'], [6.5, 0, 'solar'], [0, -4.0, 'dome'], [0, 4.0, 'mod']];
+    var n = Math.min(level, slots.length);
+    g.strokeStyle = '#59628a'; g.lineWidth = u * 0.3;
+    for (i = 0; i < n; i++) { var s = slots[i]; g.beginPath(); g.moveTo(cx, cy); if (Math.abs(s[0]) > 0 && Math.abs(s[1]) > 0) { g.lineTo(cx + s[0] * u, cy); } g.lineTo(cx + s[0] * u, cy + s[1] * u); g.stroke(); }
+    for (i = 0; i < n; i++) {
+      var sl = slots[i], mx = cx + sl[0] * u, my = cy + sl[1] * u;
+      if (sl[2] === 'solar') {
+        g.fillStyle = '#1b3f8a'; g.fillRect(mx - u * 0.9, my - u * 1.4, u * 1.8, u * 2.8);
+        g.strokeStyle = 'rgba(150,200,255,0.5)'; g.lineWidth = 1;
+        for (var k = 1; k < 4; k++) { g.beginPath(); g.moveTo(mx - u * 0.9, my - u * 1.4 + k * u * 0.7); g.lineTo(mx + u * 0.9, my - u * 1.4 + k * u * 0.7); g.stroke(); }
+        g.beginPath(); g.moveTo(mx, my - u * 1.4); g.lineTo(mx, my + u * 1.4); g.stroke();
+      } else if (sl[2] === 'dish') {
+        g.fillStyle = '#8f98bb'; g.beginPath(); g.arc(mx, my, u * 0.8, 3.6, 6.0); g.lineTo(mx, my); g.closePath(); g.fill();
+        g.strokeStyle = '#d6dcf5'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx, my); g.lineTo(mx - u * 0.3, my - u * 1.2); g.stroke();
+      } else if (sl[2] === 'dome') {
+        g.fillStyle = 'rgba(127,233,255,0.35)'; g.beginPath(); g.arc(mx, my + u * 0.3, u * 1.0, 3.1416, 6.2832); g.closePath(); g.fill();
+        g.strokeStyle = '#7fe9ff'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = '#4a527a'; g.fillRect(mx - u * 1.0, my + u * 0.3, u * 2.0, u * 0.3);
+      } else {
+        var mg = g.createLinearGradient(mx, my - u * 0.6, mx, my + u * 0.6); mg.addColorStop(0, '#b9c1e0'); mg.addColorStop(1, '#4a5278');
+        g.fillStyle = mg; rr(g, mx - u * 0.95, my - u * 0.6, u * 1.9, u * 1.2, u * 0.35); g.fill();
+        g.fillStyle = '#ffd166'; for (var q = 0; q < 3; q++) g.fillRect(mx - u * 0.6 + q * u * 0.45, my - u * 0.12, u * 0.26, u * 0.24);
+      }
+    }
+    var hg = g.createRadialGradient(cx - u * 0.4, cy - u * 0.5, u * 0.2, cx, cy, u * 1.4); hg.addColorStop(0, '#dfe5ff'); hg.addColorStop(1, '#3d456c');
+    g.fillStyle = hg; g.beginPath(); g.arc(cx, cy, u * 1.25, 0, 6.2832); g.fill();
+    g.strokeStyle = '#7fe9ff'; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, u * 0.8, 0, 6.2832); g.stroke();
+    g.globalCompositeOperation = 'lighter'; g.drawImage(glow('#ffd166'), cx - u, cy - u, u * 2, u * 2); g.globalCompositeOperation = 'source-over';
+    drawShip(g, w * 0.86, h * 0.56, h * 0.07, -0.25, 0.5, 0, ORE.iron.color, false, 0.2);
+  }
+
+  // ================= 拠点・結果の画面 =================
+  function oi(type) { return el('span', 'oi ' + type); }
+  function renderStock() {
+    var box = $('stock'); box.textContent = '';
+    TYPES.forEach(function (k) { var c = el('span', 'chip'); c.appendChild(oi(k)); c.appendChild(el('small', '', ORE[k].name)); c.appendChild(document.createTextNode(fmt(S.ore[k]))); box.appendChild(c); });
+  }
+  function renderMissions(box, missions, showGot, got) {
+    box.textContent = '';
+    missions.forEach(function (m) {
+      var d = el('div', 'mis' + (m.done ? ' done' : '')), k = el('div', 'k'); k.appendChild(oi(m.type)); k.appendChild(document.createTextNode(ORE[m.type].name));
+      var nn = el('div', 'n', showGot ? fmt(got[m.type]) + ' / ' + m.need : String(m.need)); if (!showGot) nn.appendChild(el('small', '', '個'));
+      d.appendChild(k); d.appendChild(nn);
+      box.appendChild(d);
     });
-  });
+  }
+  function canBuy(cost) { for (var k in cost) if (S.ore[k] < cost[k]) return false; return true; }
+  function renderShop(box) {
+    box.textContent = '';
+    Object.keys(UPG).forEach(function (key) {
+      var u = UPG[key], lv = S.up[key], d = el('div', 'up'), h = el('h3');
+      h.appendChild(document.createTextNode(u.name)); h.appendChild(el('span', 'pips', '●●●'.slice(0, lv) + '○○○'.slice(0, 3 - lv)));
+      d.appendChild(h); d.appendChild(el('p', '', u.blurb));
+      d.appendChild(el('p', '', 'いま: ' + (lv ? u.eff(lv) : (key === 'radar' ? '未搭載' : '強化なし')) + (lv < 3 ? '  →  次: ' + u.eff(lv + 1) : '')));
+      if (lv >= 3) { d.appendChild(el('p', 'cost', '最大まで強化済み')); box.appendChild(d); return; }
+      var cost = u.cost[lv], cp = el('p', 'cost');
+      Object.keys(cost).forEach(function (k, i) {
+        var sp = el('span', S.ore[k] < cost[k] ? 'lack' : ''); if (i) cp.appendChild(document.createTextNode('　'));
+        sp.appendChild(oi(k)); sp.appendChild(document.createTextNode(cost[k])); cp.appendChild(sp);
+      });
+      d.appendChild(cp);
+      var b = el('button', '', canBuy(cost) ? '改造する' : '鉱石が足りません'); b.type = 'button'; b.disabled = !canBuy(cost);
+      b.addEventListener('click', function () {
+        if (!canBuy(cost)) return;
+        Object.keys(cost).forEach(function (k) { S.ore[k] -= cost[k]; });
+        S.up[key]++; save(); audioInit(); sfx.buy();
+        renderStock(); renderShop($('shopHome')); renderShop($('shopResult'));
+      });
+      d.appendChild(b); box.appendChild(d);
+    });
+  }
+  function setSeg(id, val) { Array.prototype.forEach.call($(id).children, function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-v')) === String(val) ? 'true' : 'false'); }); }
+  function renderHome() {
+    renderStock();
+    $('baseName').textContent = '採掘拠点 レベル ' + S.base;
+    $('baseNote').textContent = S.base === 0 ? '依頼を達成すると、ここに施設が増えていきます。' : 'これまでの出航 ' + S.runs + ' 回';
+    drawBase($('baseCv'), S.base);
+    var sec = SECTORS[S.sector]; $('sectorName').textContent = sec.name; $('sectorDesc').textContent = sec.desc;
+    renderMissions($('homeMissions'), makeMissions(S.runs, S.prefs.min), false);
+    setSeg('segMin', S.prefs.min); setSeg('segLevel', S.prefs.level);
+    renderShop($('shopHome')); renderHistory();
+  }
+  function renderHistory() {
+    var a = S.history, t = $('hist'); t.textContent = '';
+    if (!a.length) { $('histNote').textContent = 'まだ記録はありません。'; return; }
+    $('histNote').textContent = '';
+    var head = el('tr'); ['日時', '時間', '氷', '鉄', '結晶', '依頼', '最大連鎖', '平均'].forEach(function (s) { head.appendChild(el('th', '', s)); }); t.appendChild(head);
+    a.slice(0, 10).forEach(function (r) {
+      var tr = el('tr'), d = new Date(r.date);
+      [(d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + (r.input === 'manual' ? '(試し)' : '') + (r.complete ? '' : '(途中)'),
+        r.minutes + ' 分・' + LEVELS[r.level].name, fmt(r.got.ice), fmt(r.got.iron), fmt(r.got.crystal), r.missions + '/3', r.chainMax, r.avg + ' rpm'].forEach(function (s) { tr.appendChild(el('td', '', String(s))); });
+      t.appendChild(tr);
+    });
+  }
 
   var wakeLock = null;
-  function keepAwake() {
-    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { wakeLock = l; }, function () {}); } catch (e) { /* 無視 */ }
-  }
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && !$('play').hidden) keepAwake(); });
+  function keepAwake() { try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { wakeLock = l; }, function () {}); } catch (e) { /* 無視 */ } }
+  document.addEventListener('visibilitychange', function () {
+    if ($('play').hidden || !G || G.finished) return;
+    if (document.visibilityState === 'visible') keepAwake(); else if (!G.paused) pauseGame('manual');
+  });
 
+  function show(id) { ['home', 'play', 'result'].forEach(function (k) { $(k).hidden = k !== id; }); window.scrollTo(0, 0); }
   function startGame() {
     audioInit();
-    newGame(chosenMin);
-    AU.nextBeat = 0; AU.beatNo = 0; AU.visualBeats = [];
-    $('start').hidden = true; $('result').hidden = true; $('play').hidden = false;
-    $('manual').hidden = input.mode !== 'manual';
-    hideKnobButton();
+    show('play');
+    $('manual').hidden = input.mode !== 'manual'; $('knobBtn').hidden = true; $('ctl').hidden = true; $('play').classList.remove('ctl-open');
+    if (!SPR.far) buildSprites();
     fitCanvas();
-    pauseGame('waiting');
-    keepAwake();
+    newGame(S.prefs.min, S.prefs.level);
+    G.shipX = GEO.cx;
+    AU.nextBeat = 0; AU.beatNo = 0; AU.vis = [];
+    pauseGame('waiting'); keepAwake();
     lastTs = null; requestAnimationFrame(frame);
   }
-  function finishGame() {
-    G.finished = true; G.paused = true;
-    hideKnobButton(); $('overlay').hidden = true;
-    var rec = {
-      date: new Date().toISOString(), minutes: G.minutes, ore: Math.floor(G.ore), rare: G.rare, maxCombo: G.maxCombo,
-      inBand: G.playSec ? Math.round(100 * G.inBandSec / G.playSec) : 0,
-      avg: G.playSec ? Math.round(G.cadSum / G.playSec) : 0,
-      knob: Object.keys(G.knobDone).length + '/' + Object.keys(G.knobAsked).length, hits: G.hits,
-      input: input.mode
-    };
-    saveRecord(rec);
-    showResult(rec, true);
+  function finishGame(complete) {
+    if (!G || G.finished) return;
+    G.finished = true; G.paused = true; $('knobBtn').hidden = true; $('overlay').hidden = true;
+    var done = G.missions.filter(function (m) { return m.done; }).length, modules = done + (done === 3 ? 1 : 0);
+    var total = G.got.ice + G.got.iron + G.got.crystal;
+    if (!complete && total === 0 && G.playSec < 30) { show('home'); renderHome(); return; }
+    TYPES.forEach(function (k) { S.ore[k] += G.got[k]; });
+    S.base += modules;
+    var ls = G.laneSec[0] + G.laneSec[1] + G.laneSec[2] + G.driftSec || 1;
+    var rec = { date: new Date().toISOString(), minutes: G.minutes, level: G.level, sector: G.sectorKey, got: { ice: G.got.ice, iron: G.got.iron, crystal: G.got.crystal },
+      missions: done, modules: modules, chainMax: G.chainMax, broken: G.broken, overheats: G.overheats,
+      lane: [Math.round(100 * G.laneSec[0] / ls), Math.round(100 * G.laneSec[1] / ls), Math.round(100 * G.laneSec[2] / ls)],
+      avg: G.playSec ? Math.round(G.cadSum / G.playSec) : 0, knob: Object.keys(G.knobDone).length + '/' + Object.keys(G.knobAsked).length,
+      played: Math.round(G.playSec), complete: !!complete, input: input.mode };
+    if (complete) { S.runs++; var keys = Object.keys(SECTORS).filter(function (k) { return k !== S.sector; }); S.sector = keys[rint(keys.length)]; }
+    S.history.unshift(rec); S.history = S.history.slice(0, 60);
+    var ok = save();
+    showResult(rec, ok);
   }
-  function quitGame() {
-    if (!G) return;
-    G.finished = true;
-    $('play').hidden = true; $('start').hidden = false;
-    renderHistory();
-  }
-
-  function showResult(rec, complete) {
-    $('play').hidden = true; $('start').hidden = true; $('result').hidden = false;
-    $('resultTitle').textContent = complete ? '帰還しました(' + rec.minutes + ' 分)' : '記録';
-    var tiles = [
-      ['鉱石', fmt(rec.ore), ''], ['レア鉱石', String(rec.rare), ''], ['最大コンボ', String(rec.maxCombo), '秒'],
-      ['基準レーンにいた割合', String(rec.inBand), '%'], ['平均ケイデンス', String(rec.avg), 'rpm'],
-      ['ノブ「回した」', rec.knob, '回'], ['隕石に当たった', String(rec.hits), '回'], ['メニュー', String(rec.minutes), '分']
-    ];
-    var box = $('tiles'); box.textContent = '';
-    tiles.forEach(function (t) {
-      var d = document.createElement('div'); d.className = 'tile';
-      var k = document.createElement('div'); k.className = 'k'; k.textContent = t[0];
-      var v = document.createElement('div'); v.className = 'v'; v.textContent = t[1];
-      if (t[2]) { var s = document.createElement('small'); s.textContent = t[2]; v.appendChild(s); }
-      d.appendChild(k); d.appendChild(v); box.appendChild(d);
+  function showResult(rec, saved) {
+    show('result');
+    $('resultTitle').textContent = rec.complete ? '帰還しました(' + rec.minutes + ' 分)' : '途中で帰還しました(' + mmss(rec.played) + ')';
+    var haul = $('haul'); haul.textContent = '';
+    TYPES.forEach(function (k) {
+      var d = el('div', 'tile'), kk = el('div', 'k'); kk.appendChild(oi(k)); kk.appendChild(document.createTextNode(ORE[k].name + ' を持ち帰った'));
+      var v = el('div', 'v', '+' + fmt(rec.got[k])); v.appendChild(el('small', '', '保管 ' + fmt(S.ore[k])));
+      d.appendChild(kk); d.appendChild(v); haul.appendChild(d);
     });
+    renderMissions($('resultMissions'), G.missions, true, rec.got);
+    $('award').textContent = rec.modules ? '拠点を ' + rec.modules + ' つ増設しました' + (rec.missions === 3 ? '(全達成ボーナス +1)' : '') + ' ― レベル ' + S.base
+      : '今回は依頼の達成なし。鉱石は保管庫に入りました。';
+    var stats = $('stats'); stats.textContent = '';
+    [['割った小惑星', rec.broken, '個'], ['最大連鎖', rec.chainMax, ''], ['平均の回転数', rec.avg, 'rpm'], ['オーバーヒート', rec.overheats, '回'],
+      ['ノブ「回した」', rec.knob, '回'], ['強さ', LEVELS[rec.level].name, ''], ['宙域', SECTORS[rec.sector].name, ''], ['時間', mmss(rec.played), '']].forEach(function (t) {
+      var d = el('div', 'tile'); d.appendChild(el('div', 'k', t[0])); var v = el('div', typeof t[1] === 'number' || /^[0-9:\/]+$/.test(String(t[1])) ? 'v' : 'v word', String(t[1])); if (t[2]) v.appendChild(el('small', '', t[2])); d.appendChild(v); stats.appendChild(d);
+    });
+    var bar = $('laneBar'); bar.textContent = '';
+    rec.lane.forEach(function (p, i) { var s = el('i'); s.style.width = p + '%'; s.style.background = LANE_COL[i]; bar.appendChild(s); });
+    $('laneNote').textContent = '低 ' + rec.lane[0] + '% ・ 中 ' + rec.lane[1] + '% ・ 高 ' + rec.lane[2] + '%(残りは漂流)';
+    renderShop($('shopResult'));
+    var sec = SECTORS[S.sector]; $('nextName').textContent = sec.name; $('nextDesc').textContent = sec.desc;
+    $('saveWarn').hidden = saved;
     drawResultGraph();
-    window.scrollTo(0, 0);
   }
   function drawResultGraph() {
     var c = $('resultGraph'), r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (!r.width || !G) return;
     c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
     var g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    var w = r.width, h = r.height, x0 = 40, x1 = w - 10, y0 = 10, y1 = h - 26, V0 = 40, V1 = 110;
+    var w = r.width, h = r.height, x0 = 40, x1 = w - 10, y0 = 10, y1 = h - 26, V0 = 35, V1 = 110;
     function X(t) { return x0 + (x1 - x0) * t / G.total; }
     function Y(v) { return y1 - (y1 - y0) * (clamp(v, V0, V1) - V0) / (V1 - V0); }
-    g.clearRect(0, 0, w, h);
-    g.font = '500 12px ' + FB; g.fillStyle = COL.sub; g.textAlign = 'right'; g.textBaseline = 'middle';
-    for (var v = 50; v <= 100; v += 10) {
+    g.font = '500 12px ' + FB; g.textAlign = 'right'; g.textBaseline = 'middle';
+    for (var v = 40; v <= 100; v += 10) {
       g.strokeStyle = 'rgba(154,163,207,0.15)'; g.beginPath(); g.moveTo(x0, Y(v)); g.lineTo(x1, Y(v)); g.stroke();
-      if (v % 20 === 0) g.fillText(String(v), x0 - 6, Y(v));
+      if (v % 20 === 0) { g.fillStyle = COL.sub; g.fillText(String(v), x0 - 6, Y(v)); }
     }
-    G.phases.forEach(function (p) {
-      g.fillStyle = 'rgba(255,209,102,0.25)';
-      g.fillRect(X(p.start) + 1, Y(p.target + BAND), X(p.start + p.dur) - X(p.start) - 2, Y(p.target - BAND) - Y(p.target + BAND));
-      g.fillStyle = COL.sub; g.textAlign = 'center'; g.textBaseline = 'top'; g.fillText(p.name, X(p.start + p.dur / 2), y1 + 6);
-    });
-    G.events.forEach(function (e) {
-      g.fillStyle = e.type === 'rare' ? 'rgba(255,79,216,0.22)' : 'rgba(255,93,93,0.18)';
-      g.fillRect(X(e.t), y0, X(e.t + e.dur) - X(e.t), y1 - y0);
-    });
+    for (var i = 1; i < G.trace.length; i++) {
+      var a = G.trace[i - 1], b = G.trace[i], xa = X(a[0]), xw = Math.max(1, X(b[0]) - xa + 0.5), B = b[2];
+      [[4, 12, 2], [-4, 4, 1], [-12, -4, 0]].forEach(function (L) { g.fillStyle = rgba(LANE_COL[L[2]], 0.28); g.fillRect(xa, Y(B + L[1]), xw, Y(B + L[0]) - Y(B + L[1])); });
+    }
+    g.textAlign = 'center'; g.textBaseline = 'top'; g.fillStyle = COL.sub;
+    G.phases.forEach(function (p) { if (p.start < G.T) g.fillText(p.name, X(p.start + p.dur / 2), y1 + 6); });
     g.strokeStyle = COL.text; g.lineWidth = 1.6; g.beginPath();
-    G.trace.forEach(function (p, i) { if (i === 0) g.moveTo(X(p[0]), Y(p[1])); else g.lineTo(X(p[0]), Y(p[1])); });
+    G.trace.forEach(function (p, k) { if (k) g.lineTo(X(p[0]), Y(p[1])); else g.moveTo(X(p[0]), Y(p[1])); });
     g.stroke();
-  }
-
-  // ================= 記録 =================
-  function loadRecords() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]') || []; } catch (e) { return []; } }
-  function saveRecord(rec) {
-    try { var a = loadRecords(); a.unshift(rec); localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(0, 100))); } catch (e) { /* 保存できない環境 */ }
-  }
-  function renderHistory() {
-    var a = loadRecords(), t = $('hist'); t.textContent = '';
-    if (!a.length) { $('histNote').textContent = 'まだ記録はありません。'; return; }
-    $('histNote').textContent = '';
-    var head = document.createElement('tr');
-    ['日時', 'メニュー', '鉱石', 'レア', '最大コンボ', '基準レーン', '平均', 'ノブ'].forEach(function (s) { var th = document.createElement('th'); th.textContent = s; head.appendChild(th); });
-    t.appendChild(head);
-    a.slice(0, 10).forEach(function (r) {
-      var tr = document.createElement('tr'), d = new Date(r.date);
-      [(d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0') + (r.input === 'manual' ? '(試し)' : ''),
-        r.minutes + ' 分', fmt(r.ore), r.rare, r.maxCombo + ' 秒', r.inBand + '%', r.avg + ' rpm', r.knob].forEach(function (s) {
-        var td = document.createElement('td'); td.textContent = s; tr.appendChild(td);
-      });
-      t.appendChild(tr);
-    });
   }
 
   // ================= ボタン =================
   $('btnBike').addEventListener('click', connectBike);
   $('btnManual').addEventListener('click', useManual);
   $('btnStart').addEventListener('click', startGame);
+  $('btnAgain').addEventListener('click', startGame);
+  $('btnHome').addEventListener('click', function () { show('home'); renderHome(); });
+  ['segMin', 'segLevel'].forEach(function (id) {
+    Array.prototype.forEach.call($(id).children, function (b) {
+      b.addEventListener('click', function () {
+        var v = b.getAttribute('data-v');
+        if (id === 'segMin') S.prefs.min = parseInt(v, 10); else S.prefs.level = v;
+        save(); setSeg(id, v); renderMissions($('homeMissions'), makeMissions(S.runs, S.prefs.min), false);
+      });
+    });
+  });
+  var ctlTimer = null;
+  cv.addEventListener('click', function () {
+    $('ctl').hidden = false; $('play').classList.add('ctl-open');
+    clearTimeout(ctlTimer); ctlTimer = setTimeout(function () { $('ctl').hidden = true; $('play').classList.remove('ctl-open'); }, 5000);
+  });
   $('btnPause').addEventListener('click', function () {
     if (!G || G.finished) return;
     if (G.paused) { if (G.pauseReason === 'manual') resumeGame(); } else pauseGame('manual');
   });
-  $('btnSound').addEventListener('click', function () {
-    AU.on = !AU.on; audioInit();
-    this.setAttribute('aria-pressed', AU.on ? 'true' : 'false'); this.textContent = AU.on ? '音 オン' : '音 オフ';
+  $('btnSound').addEventListener('click', function () { audioInit(); setSound(!AU.on); S.prefs.sound = AU.on; save(); });
+  $('btnQuit').addEventListener('click', function () { finishGame(false); });
+  $('btnExport').addEventListener('click', function () {
+    var s = JSON.stringify(S); $('saveText').value = s; $('saveText').select();
+    var done = function (m) { $('saveNote').textContent = m; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(function () { done('書き出しました(クリップボードにもコピーしました)。メモなどに貼って保管してください。'); }, function () { done('書き出しました。上の文字を全部コピーして保管してください。'); });
+    else done('書き出しました。上の文字を全部コピーして保管してください。');
   });
-  $('btnQuit').addEventListener('click', quitGame);
-  $('btnAgain').addEventListener('click', startGame);
-  $('btnHome').addEventListener('click', function () { $('result').hidden = true; $('start').hidden = false; renderHistory(); });
+  $('btnImport').addEventListener('click', function () {
+    try {
+      var o = JSON.parse($('saveText').value);
+      if (!o || o.v !== 2) throw new Error('形式が違います');
+      S = normalizeSave(o); save(); renderHome(); $('saveNote').textContent = '読み込みました。';
+    } catch (e) { $('saveNote').textContent = '読み込めませんでした。書き出した文字を、そのまま全部貼り付けてください。'; }
+  });
 
-  renderHistory();
+  setSound(S.prefs.sound);
+  renderHome();
+  if (document.fonts && document.fonts.load) {
+    Promise.all(['400 20px "Dela Gothic One"', '900 20px "Big Shoulders Display"', '700 20px "Chakra Petch"', '700 20px "Zen Kaku Gothic New"'].map(function (f) { return document.fonts.load(f, 'あ0A'); }))
+      .then(function () { if (!$('home').hidden) renderHome(); }, function () {});
+  }
   if (PARAMS.get('manual') === '1') useManual();
 
   // 動作確認用(画面の動作には使わない)
   window.__space = {
-    get G() { return G; }, setCadence: setCadence, parseIndoorBikeCadence: parseIndoorBikeCadence,
-    buildPhases: buildPhases, laneOf: laneOf
+    get G() { return G; }, get S() { return S; }, setCadence: setCadence, parseIndoorBikeCadence: parseIndoorBikeCadence,
+    laneRaw: laneRaw, laneHyst: laneHyst, buildPhases: buildPhases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
   };
 })();
 </script>
