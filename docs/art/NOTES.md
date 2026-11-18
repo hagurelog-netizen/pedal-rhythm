@@ -200,3 +200,156 @@ Create ONE final production game sprite far.png: a distant enormous dark asteroi
 ```text
 Create ONE finished landscape game background bg.jpg, composition aspect ratio 4:3, intended final resolution 2048x1536. OPAQUE full-bleed deep outer space. Hard science-fiction concept-art digital PAINTING, rich subtle realistic astronomical clouds and fine star points, same cool upper-left lighting language as realistic painted asteroid game assets, restrained navy, indigo and muted violet palette, not vector, low-poly, anime, toy, or cheap CGI. CRITICAL LAYOUT: top LEFT corner and top RIGHT corner contain the only luminous nebula wisps, softly cyan-blue on upper left, dim dusty violet on upper right. Keep all noticeably bright clouds confined to the TOP QUARTER and outer upper corners, not the top middle. A very distant faint sparse asteroid belt, tiny dark irregular pebbles dimly rimlit from upper left, gently arcs across upper quarter only. The ENTIRE CENTRAL region and LOWER TWO THIRDS must be very dark, quiet, open, near-black navy around #060818, with only extremely sparse faint tiny stars and almost imperceptible dust; this is negative space for gameplay lanes and moving sprites. No central bright star, no large stars, no starburst, no flare, no planets, no giant moon, no ship, no foreground asteroids, no beams, no game lanes, no UI, no grid. Atmospheric depth, carefully understated detailed hand-painted nebula in the upper corners but ample calm darkness from center down. No lettering, logo, borders, signature or watermark. Fill entire 4:3 image, no transparency.
 ```
+
+## Round 5 — 拠点5段階・背景・宇宙ゴミ（2026-11-18）
+
+### 制作・原本
+
+- BRIEF.md、REVIEW.mdを全文確認。参考は依頼に添付されたship/bgを会話上で確認し、ファイルから再表示していない。合格済み10枚・仕様書・コードは未変更。rock_*_3は未制作。
+- 絵は7枚とも組込みの`image_gen.imagegen`で制作。station_5を新規生成後、会話上の各直前の生成物を編集元として4→3→2→1を別々の呼出しで制作。説明だけによる新規生成への切替なし。背景とdebrisは新規生成。全画像とも作り直し0回。
+- 各編集プロンプトで異なる新しいランダムseedを要求した。ただし組込みツールにはseedの設定引数も返却値もないため、実際のseed数値の相違は制御・検証できない。明示seedを使い回していないが、相違を検証できたとは主張しない。
+- 原本は次のリポジトリ外フォルダに保存され、削除・上書きしていない。
+
+`C:\Users\manga\.codex\generated_images\01a1ebf2-2d12-7971-933f-1b82f171ebac\`
+
+| 納品ファイル | 原本ファイル | 方法 | 寸法 | bytes |
+|---|---|---|---|---:|
+| station_1.png | call_huHIgsREjNFZ3hq8gFZjmjUF.png | station_2から編集 | 768×768 | 171851 |
+| station_2.png | call_92DTuMRTRMjAn6E3umkG22ZE.png | station_3から編集 | 768×768 | 297285 |
+| station_3.png | call_NaqBWvqGQuIEjU9HyufB9oP8.png | station_4から編集 | 768×768 | 394981 |
+| station_4.png | call_1W3DMUUM2dvaitpZpxAOzpQ2.png | station_5から編集 | 768×768 | 118441 |
+| station_5.png | call_av3FG5YTjR0WPTc8rQunuLgA.png | 新規生成、添付2枚をスタイル参照 | 768×768 | 142125 |
+| base_bg.jpg | call_jULgPgYqNljGh1nPWRxXw0U6.png | 新規生成 | 1600×500 | 61122 |
+| debris.png | call_t0vBrvi6VR2llvy3ZZl7BQBy.png | 新規生成 | 512×512 | 321144 |
+
+### 後処理・確認状況
+
+- Pillowは透明処理・縮小・トリミング・形式変換・preview配置だけに使用。描画による絵の制作、ノイズ、明るさ/コントラスト/色調補正なし。
+- station原本は全5枚1254×1254 RGBA。station_5のalpha>8の外接は(66,74,1193,1163)。その全体を含む1254角の共通キャンバスを使い、全5枚とも倍率768/1254（約0.6124401914）、平行移動(0,0)、LANCZOSで縮小。個別の余白切詰め・拡大・再センタリングなし。
+- 原本の外周にalpha 1〜8の極薄い残りがあったため、全スプライトに同じalpha<=8→0の透過整理を適用。他のalphaは事前に強制二値化していない。緑抜き不要。
+- station_1〜3とdebrisはRGBA PNG。4/5は450000 bytes以内にするため、256色FASTOCTREE・ディザなしの透過パレットPNGへ変換。色とalphaの量子化あり。4/5の最大alphaは253、それ以外は255。透明背景はalpha=0を保持。量子化後の質感・輪郭は最終目視が必要。
+- base_bgは原本2172×724を1600×533へ等比縮小し、上側33pxを切って下端を保持する1600×500へトリミング。左下の惑星と輪を残す処理。JPEG quality=92、subsampling=0、progressive、optimize。debrisは1254角→512角。
+- 指定寸法・station各450000 bytes以下・背景400000 bytes以下・透過と全周余白を数値検査。視覚的な合格判定とは区別する。
+- previewは1536×1576→1536×3156へ拡張。既存の上側1536×1576領域はRGB画素列の完全一致を検査し、合格済み10枚の一覧と64px列を保持。追加領域の背景は#060818。station_1〜5を同倍率294角で左から横一列、背景、debrisの512/64/60/32/20px表示を追加。ラベルはpreviewのみ。
+- 生成直後の7枚は会話に表示されたものを見て確認。八角形コア・屋上四角ハッチ・暖色窓帯、左下/右上の居住区を保ちながら指定部品が減ること、背景中央〜右の暗さ、debrisの金属輪郭を確認した。ただし編集は画素固定ではなく、コアの表面傷・面取り・窓の輝きに小さな描き直しがあり、取り外した接続部のキャップも変わる。完全な画素一致は保証しない。
+- 最終station_1.pngのview_image試行は`helper_sandbox_lock_failed`、`SetNamedSecurityInfoW ... failed: 5`で失敗。同じ環境障害を受け、最終7画像・更新previewの再表示、1枚ずつの最終目視、最終横並び目視は未完了。生成自体は全7回成功し、依頼どおり停止せず続行した。最終画像の視覚的な合格とはしない。
+- 利用者側でpreviewの5段階横並びからコアの形・位置・向き・縮尺、4/5の量子化後の質感、惑星の輪の薄さ、20〜60pxのdebris可読性を最終確認してほしい。
+
+### 送信プロンプト（全文）
+
+#### station_5.png（新規生成・作り直し0回）
+
+`num_last_images_to_include: 2`（添付ship、bgをスタイル参照）。
+
+```text
+Use case: stylized-concept. Asset: station_5.png, one isolated production sprite for a hard-SF mining game. The two attached images are STYLE REFERENCES ONLY: image 1 is the approved ship, image 2 the approved space background. Match the ship's realistic hand-painted weathered pale silver-gray industrial armor, charcoal joints, inset piping, tiny worn ochre safety trim, restrained saturation; strong blue-white key light upper left, deep lower-right shadows with very thin muted violet rim. No toy CGI, no vector, no outlines. Create a mining space station at its fully expanded fifth stage, viewed orthographically from elevated three-quarter above, no perspective exaggeration. Square 1024x1024 canvas, genuinely transparent alpha background preferred; if transparency is impossible use absolutely uniform pure #00FF00 green everywhere outside the station, no green on the station, never black. Entire station fully contained within x=65..959,y=65..959 with generous clear margin, no cropping. This is a 5-level modular upgrade family: the central core MUST be a small, memorable squat octagonal silver-gray drum, warm yellow #ffd166 rectangular window band on front side, raised flat octagonal roof with a recessed rectangular maintenance hatch. Core roof centered around (512,470), core spans roughly x=390..634,y=365..610. It must remain this EXACT size, position and orientation in future lower levels. Clear modular, separable components attached on radial short trusses, without obscuring the core: first small rounded rectangular residential pod lower-left of core; second matching residential pod upper-right of core; first PAIR of dark desaturated navy-blue solar wings extends upper-left, two divided rectangular leaves on a single crossbar; a compact paired cylindrical ore-storage tank sits lower-left beyond habitat on its own connector; a small thin antenna stands near the tanks; a second PAIR of matching solar wings extends lower-right, two divided leaves on its own crossbar; a clearly recognizable empty small-ship docking platform projects toward bottom-center, no actual ship; a large parabolic communication dish on an open mast at top-center/right, clearly separate from the small antenna; a small distinct glass observation dome on its own short extension to the right. All connectors stay physically plausible and visibly joined. Warm yellow windows in BOTH residential pods and core and dome, enough to feel inhabited, but no external glow, flare or particles. Detailed concept-art digital painting, realistic exposed machinery, bolts and panel seams, confident readable silhouette, not a diagram. No text, numbers, lettering, logos, borders, UI, watermark or signature. No stars, nebula, ground, shadow plane, engine flames, trails, exhaust or floating debris. Generate only ONE station, not a contact sheet. Independent generation, use a fresh random seed.
+```
+
+#### station_4.png（station_5を編集・作り直し0回）
+
+`num_last_images_to_include: 1`（会話上のstation_5）。
+
+```text
+Use case: precise-object-edit. Edit target is ONLY the most recently generated mining station (station_5), already visible in conversation. Produce station_4 by SUBTRACTIVE editing of that exact image. Keep the identical square canvas, transparent alpha background, framing and pixel placement; absolutely DO NOT zoom, recenter, enlarge, rotate or redesign any retained part. Keep the squat octagonal silver-gray central drum and its recessed square roof hatch, front amber window band, ochre paint wear, panel seams and its current position and size EXACTLY unchanged. Keep both residential pods (lower-left and upper-right), BOTH pairs of navy-blue solar arrays (upper-left and lower-right), paired cylindrical ore tanks at bottom-left, small thin antenna near the tanks, and the empty docking platform at bottom-center, all identical and in their original positions. REMOVE ONLY the large parabolic communications dish AND its tall mast at top-center, and the observation dome plus its short connector at middle-right. Replace removed parts with true empty transparency, cleanly cap their mounting ports at the core without adding new modules. Do not remove the small antenna beside the ore tanks. Windows remain warm yellow #ffd166; retain original cool upper-left lighting and faint violet lower-right rim. Remove the dome's windows by removing the dome, but do not change existing core or habitat windows. Match the original detailed realistically painted hard-SF materials. One isolated station only. No lettering, logo, numbers, UI, borders, watermark, stars, scene, ground, shadows outside object, exhaust, particles or detached debris. If real alpha cannot be produced, pure #00FF00 backdrop only, no green on machinery; never black backdrop. This is a NEW independent edit invocation: use a NEW random seed different from the preceding generation. Do not reuse a seed or cached state.
+```
+
+#### station_3.png（station_4を編集・作り直し0回）
+
+`num_last_images_to_include: 1`（会話上のstation_4）。プロンプト中の1280角という記述とは別に、保存原本は実測1254角で全段階一致。
+
+```text
+Use case: precise-object-edit. Input edit target: the MOST RECENT generated station_4 sprite visible in this conversation. Create station_3 with a strictly subtractive edit. KEEP the exact existing 1280x1280 square canvas and original transparent background; leave all surviving artwork at precisely its existing pixel coordinates and scale, do not zoom or recenter despite increased empty space. KEEP UNCHANGED the central squat octagonal gray industrial drum with recessed square roof hatch and warm amber front window band, both residential pods at lower-left and upper-right, the FIRST solar array pair at upper-left, paired cylindrical ore tanks at bottom-left, and the SMALL antenna beside those tanks. REMOVE ONLY the SECOND solar array pair at LOWER-RIGHT plus its projecting support strut, and the empty octagonal DOCKING PLATFORM at BOTTOM-CENTER plus its long access bridge. Replace deleted parts with real transparent empty canvas. Cleanly cap exposed attachment ports with small existing-style mechanical covers, no new structures. Preserve the physical connection to the ore tanks exactly; do not confuse their diagonal connector with the docking bridge being removed. No large dish, no observation dome (these were already absent). Do not change any retained window, material, gray/ochre colors, shape, scale, position, viewing angle or blue-white upper-left illumination, faint purple lower-right rim. Hard SF realistic detailed digital painting matching the input. No text, UI, logo, border, watermark, scene, cast shadow, glow, trails, particles. Genuine transparent alpha, never black background; uniform pure #00FF00 only if alpha impossible. This is a separate new edit generation, use a FRESH random seed DIFFERENT from all prior stages, never reuse the previous edit seed or cached state. Deliver ONE isolated station_3, not a comparison sheet.
+```
+
+#### station_2.png（station_3を編集・作り直し0回）
+
+`num_last_images_to_include: 1`（会話上のstation_3）。
+
+```text
+Use case: precise-object-edit. Edit the most recently generated station_3 visible in conversation to create station_2. ONLY remove the two cylindrical ore-storage tanks and their bottom-left cradle, their diagonal attachment truss to the core, and the SMALL thin antenna mounted beside those tanks. Erase removed hardware to real transparent empty canvas, cleanly cap the vacated connector on the core. Keep absolutely everything else unchanged: central squat octagonal silver-gray drum, recessed square roof hatch, vent arrangements, yellow worn safety paint, amber #ffd166 front windows, first rounded rectangular residential pod LOWER-LEFT, second rounded rectangular residential pod UPPER-RIGHT, first pair of desaturated blue solar wings UPPER-LEFT and all their connecting struts. Keep the exact input canvas dimensions, all remaining components at their EXACT current coordinates, scale, orientation and viewing angle. DO NOT zoom, resize, recenter, recompose or fill the newly empty lower half. Preserve detailed realistic hard-SF painted textures and strong upper-left cool blue-white light with faint lower-right purple rim. NO docking platform, second solar pair, large dish, observation dome, ore tanks or antenna. One isolated station on genuine alpha transparency; pure solid #00FF00 only if transparency impossible, never black. No extra pieces, no characters, no stars, no scene, no glow, no particles, no exhaust, no cast shadow plane, no text, logo, watermark, border or UI. This stage is a NEW separate edit invocation: use a NEW independent random seed unlike all previous stages; no reused seed or cached edit.
+```
+
+#### station_1.png（station_2を編集・作り直し0回）
+
+`num_last_images_to_include: 1`（会話上のstation_2）。
+
+```text
+Use case: precise-object-edit. Edit ONLY the most recent generated station_2 sprite shown in this conversation to make station_1, the earliest stage of the SAME space mining station. Remove the residential pod at UPPER-RIGHT and its connecting truss. Remove the single solar array assembly at UPPER-LEFT (both blue wings and its connecting truss). Replace removed parts with true alpha transparency. Keep ONLY the central octagonal silver-gray industrial drum and the ONE small rounded rectangular residential pod at LOWER-LEFT, with its short connecting passage. Cleanly cap the two newly vacant sockets, no added modules. ABSOLUTELY preserve the entire central core: original size, shape, location, square recessed roof hatch, front amber #ffd166 windows, vents, weathered pale gray metal, ochre safety paint, orientation and viewing angle. Retain the lower-left habitat with its existing exact dimensions, placement, details and warm windows. KEEP THE EXACT ORIGINAL 1280x1280 CANVAS AND PIXEL PLACEMENT. The core stays around the center of the canvas; do not center the combined asymmetric silhouette, do not zoom or enlarge to fill the empty canvas; most of the canvas will be transparent. Original upper-left cool blue-white illumination, deep lower-right shading and faint violet rim. Rich realistic hard-SF digital painting, matching the input rather than redesigning. No second habitat, solar wings, tanks, antennas, dock, dome, large dish or extra objects. No letters, logos, numbers, borders, UI, watermark, signature, scene, ground, glow, exhaust, trails or particles. Genuine transparent background, pure uniform #00FF00 only if alpha impossible, never black. This is a NEW independent edit with a FRESH distinct random seed, not the previous stage's seed or cached state. Output only one station_1 sprite.
+```
+
+#### base_bg.jpg（新規生成・作り直し0回）
+
+```text
+Use case: stylized-concept. Create base_bg.jpg, a finished full-bleed EXTRA WIDE landscape space background for a hard-SF mining game, final aspect ratio 1600:500 (3.2:1). Compose safely for a tiny centered vertical crop if generation uses 3:1. Realistically painted hard science-fiction concept-art digital painting, subtle detailed materials and astronomical clouds, restrained desaturated navy/indigo/cyan and barely violet palette, NOT cartoon/vector/low-poly/cheap CGI. Match the approved background's deep almost-black navy #060818 negative space, subdued cyan nebula lighting at upper left and very dim muted violet at far right. The LOWER LEFT CORNER contains ONLY A PARTIAL LARGE TEAL PLANET: its unseen center lies well outside the frame below and left, a graceful broad curved illuminated horizon arcs in from left edge and exits bottom edge before 40% of image width. Surface softly textured dark blue-green oceans and muted cloud bands, pale cool cyan atmospheric rim lit from UPPER LEFT, no bright white bloom. Show an extremely faint thin tilted planetary ring hugging the same bottom-left region, crossing near the limb, subtle dusty desaturated blue-gray, not a glowing swoosh. Planet is a cropped corner accent, not a whole globe, occupies leftmost 30-35% and bottom half at most. Keep the ENTIRE CENTER AND RIGHT TWO-THIRDS very dark, calm and empty for an overlaid station at center and ship at right: only sparse very tiny dim stars, almost no nebulosity, no bright star, no central flare. Faint cyan mist only near extreme upper-left edge; violet barely visible at far upper-right. No foreground objects, station, ships, asteroids, debris, beams, tails, light streaks, large stars or lens flares. No text, letters, labels, logos, border, UI, watermark, signature. Opaque image, no transparency. Generate one ultra-wide panoramic background only. Fresh independent random seed.
+```
+
+#### debris.png（新規生成・作り直し0回）
+
+```text
+Use case: stylized-concept. Create debris.png: ONE compact coherent cluster of broken artificial satellite / utilitarian mining-ship wreckage, isolated on genuinely TRANSPARENT alpha, square canvas, centered with 10% clear empty margin all around. If transparency impossible use absolutely uniform pure #00FF00 background and no green in object, never black. Match a hard-SF concept-art realistically hand-painted industrial sprite: scuffed PALE SILVER-GRAY metal like a weathered working mining ship, charcoal recesses, a few desaturated ochre hazard paint remnants, dark desaturated navy-blue photovoltaic cells, bolts and exposed pipes. Strong cool blue-white light from upper left, deep volumetric shadows lower right, extremely thin faint muted violet rim, restrained saturation. The silhouette should be chunky and immediately readable when reduced to ONLY 20 to 60 pixels against very dark navy: a folded torn metal hull panel with bent edges, a broken solar panel at an angle showing only a few LARGE navy cells, a dented small silver cylindrical satellite body partly crushed, two or three visibly torn short thick cables curling between the pieces. Pieces close together physically tangled into ONE compact asymmetrical wreckage cluster, not a scattered field of tiny chips or a neat intact satellite. Bright enough pale metal edges to see silhouette on #060818, but no luminous materials. All elements fully inside canvas. Material-rich detailed realistic digital painting, not toy CGI, not vector, low-poly, cartoon, outline drawing or pixel art. NO tails, light, glow, bloom, sparks, fire, smoke, exhaust, beams, streaks, particles, stars, space scene, ground or cast shadow. NO text, logos, letters, numbers, border, UI, watermark or signature. Generate only one finished transparent game debris sprite. Use a fresh independent random seed.
+```
+
+## 2026-11-18 / round 5：小惑星の3種類目だけ追加
+
+対象は REVIEW.md「4」のみ。既存の合格画像・拠点・背景・宇宙ゴミ・BRIEF.md・REVIEW.md・コードは変更しない。既存ブランチ `art/round-5` にコミットし、pushしない。
+
+### 生成・環境の記録
+
+絵はすべて `image_gen.imagegen` で新規生成。コードによる作画・模様生成はしていない。添付の6枚を見て質感・色・照明を指定した。ユーザー指定に従いリポジトリの画像を view_image 等で開き直していない。
+
+最初の鉄の生成呼び出しは参照画像2枚の読み込み時に `helper_sandbox_lock_failed / SetNamedSecurityInfoW ... failed: 5` となり生成まで進まなかった。指示どおり中断せず、ローカル参照の受け渡しを外して詳細な文章指定で生成を続行した。生成モデルへの直接の画像参照は成功していないので、画風の完全一致は保証しない。
+
+作り直しは3枚とも0回（成功した初回生成を採用）。鉄のみ生成前の参照読み込み失敗が別に1回。画像を編集して再編集する工程はなく、各独立呼び出しに新しいseedを指示した。ただしツールはseedの数値指定・返却に対応しておらず、数値は記録できない。
+
+生成ツールが表示した原本は個別に確認した。最終PNG・preview.png・64px版の再目視はユーザー指定に従い行っていない。通常シェルとNodeもWindowsサンドボックス障害で起動しなかったが、承認済み昇格シェルで画像処理・数値検査・Git操作は実行できた。
+
+### 原本（1254×1254 RGBA PNG、加工せず保存）
+
+共通ディレクトリ：`C:\Users\manga\.codex\generated_images\01a1ec04-0197-7f91-bfe7-8ad08fc2ab26\`
+
+| 納品画像 | 原本ファイル | 作り直し |
+|---|---|---:|
+| rock_iron_3.png | call_hecVW8M92tgRo3iYzWUA09QI.png | 0回 |
+| rock_ice_3.png | call_sfiPyZJr4OdXncVvemQklYjd.png | 0回 |
+| rock_crystal_3.png | call_mfJeXtijlmWPqxTE5ltOrUeO.png | 0回 |
+
+### 後処理・検査
+
+Pillowでalphaが8以下の微弱な背景残渣を透明化し、alpha境界で余白をトリミング、最長辺436pxへLanczos縮小、透明な512×512中央に配置、PNG保存した。明るさ・コントラスト・RGB色補正、減色、描画修正なし。
+
+| ファイル | 形式・寸法 | 容量 | alpha境界 (left,top,right,bottom) | 対象寸法 | 長辺/短辺 |
+|---|---|---:|---|---|---:|
+| rock_iron_3.png | RGBA PNG 512×512 | 337,213 bytes | (38,67,474,445) | 436×378 | 1.1534 |
+| rock_ice_3.png | RGBA PNG 512×512 | 322,404 bytes | (38,68,474,444) | 436×376 | 1.1596 |
+| rock_crystal_3.png | RGBA PNG 512×512 | 341,876 bytes | (38,56,474,455) | 436×399 | 1.0927 |
+
+透明背景・四辺の余白・最長辺85.15625%・縦横比1.25以内・中央からのずれ0.5px以下・400,000bytes以下を数値確認。原本では目立つ地面影・外側への光のにじみはなかったが、最終の縁は未目視。
+
+preview.pngは旧1536×3156を上部に全画素そのまま残し、下に鉱種別の1・2・3を並べた512px比較行と各64px版を追加。更新後1536×5204。保存前後に旧領域の画素一致を検査した。既存の全一覧・拠点の成長比較・背景・宇宙ゴミも残した。文字ラベルはpreviewのみ。
+
+### 気になる点（最終目視はユーザーにお願い）
+
+- 鉄3：低い五角形の冠と左下の大きなクレーターで輪郭差を付けた。錆び色は1・2より局所的に見える可能性があり、64pxでの識別性を確認してほしい。
+- 氷3：低い連続した冠、横方向の層と右寄りの縦割れ。既存より広い面が滑らかに感じられる可能性があり、霜・半透明感・暗部の明るさの一致を確認してほしい。
+- 結晶3：丸みのある三角形の岩の冠と中央の太短い結晶群。反射が強めの面があり、内側からの紫の発光感が1・2と揃うか確認してほしい。
+- 共通：直接の画像参照は失敗し文章指定で制作した。最終512px・64pxの画風、微細な縁の色、リムライトの強さ、輪郭差は未承認。
+
+### 採用画像に使った生成プロンプト全文
+
+#### rock_iron_3.png（新規生成・作り直し0回）
+
+```text
+Generate ONE NEW standalone game asset: rock_iron_3, a third iron asteroid sprite. Strict style: realistic hard science-fiction concept-art digital painting, very detailed granular porous charcoal-gray rock with deep impact craters and rusty orange #ffa25c mineral seams. Not cartoon, not vector, not low-poly, not glossy plastic CGI. Match the approved series: strong pale icy-blue light from UPPER LEFT across rough chiseled facets, lower right in deep blue-black volumetric shadow, extremely faint thin violet edge rim, overall desaturated dark rock with vivid localized rust-orange seams. Rust NOT molten lava and not luminous. NEW unique outline: squat approximately round rounded-pentagonal boulder, broad almost-flat gently sloping crown with ONE blunt low central shoulder, full bulbous LEFT shoulder, broad beveled RIGHT edge and flattened rounded bottom. Width/height approximately 1.10, maximum 1.25. NO twin upper peaks, NO long pear or oval, NO narrow waist, NO pointed top. Main broad concave crater on FRONT LOWER LEFT, smaller deep crater high right and several small pits. Rusty orange mineral deposits follow an irregular broken seam descending from upper middle toward lower right, secondary branches cross the central face, orange about 15% of visible surface. Large chunky fracture planes, sharp realistic rock texture, readable as an iron asteroid at 64 pixels. Single whole object fully contained in square canvas, centered with about 85% occupancy and clear empty margins. Actual TRANSPARENT ALPHA background. No black painted background, no checkerboard painted background, no floor, ground plane, cast shadow, scene, space backdrop, debris, particles, glow spill, haze, bloom, lens flare, flame, sparks or trails. No text, logo, frame, UI, watermark or signature. No cartoon, vector art, low-poly, plastic cheap CGI. Output exactly ONE finished isolated transparent asteroid sprite, not multiple variants or a contact sheet. Fresh independent random generation, different seed from earlier calls.
+```
+
+#### rock_ice_3.png（新規生成・作り直し0回）
+
+```text
+Generate ONE NEW standalone game asset: rock_ice_3, third ice asteroid sprite, visually same realistic hard-SF concept-art digital painting series as deeply textured round dark meteorites and blue icy asteroids, only outline and arrangement newly varied. The ice is blue-white semi-transparent layered ancient ice, cyan #8fe3ff depths, frosted chalky white ridges, glossy fractured facets with fine crystalline grain and deep dark teal fissures. Strong icy-blue-white directional light from UPPER LEFT, lower right in deep desaturated blue shadow with extremely thin faint violet edge rim. Restrained saturation, physically rich ice texture, no cartoon, vector, low-poly, outline, plastic or cheap CGI. Deliberately NEW silhouette: a squat roughly round ROUNDED HEXAGON, broad single continuous shallow domed top sloping gently toward a shaved upper-right bevel; pronounced rounded shoulder bulging out at mid-right; broad nearly flat rounded bottom and one shallow bite in LOWER LEFT edge. NO twin peaks on top, NO tall pointed ice mountain, NO pear shape and NO smooth oval outline. Width/height about 1.08, never more than 1.25. Broad ice strata arc mostly HORIZONTALLY around the central bulging mass, not an all-diagonal shape. ONE deep jagged roughly vertical split in front face slightly right of center, interrupted by overlapping translucent ice shelves, several thin subordinate cracks; frost coats convex ridges while transparent cyan facets catch pale cool highlights. Fully solid ice asteroid, no dark rock base, no metal or purple crystals. Readable material at 64 px. Single whole complete object centered on a square canvas occupying about 85%, safe clear margins all around. GENUINE transparent alpha background, not a black painted background or checkerboard image. No environment, no floor or ground plane, no ground shadow, no detached fragments, no snow particles, haze, glow spill, bloom, lens flare, tail, trails or stars. Absolutely no text, logo, border, UI, watermark or signature. Output exactly ONE finished isolated transparent sprite, no sheet or variants. Independent fresh random generation with a distinct new seed, not an edit of the preceding iron image.
+```
+
+#### rock_crystal_3.png（新規生成・作り直し0回）
+
+```text
+Generate ONE NEW standalone game asset: rock_crystal_3, a third purple-crystal asteroid, in a strict realistically textured hard-SF concept-art digital painting style. Material and lighting match this series: coarse CHARCOAL DARK GRAY pitted cratered meteorite rock; translucent vivid PURPLE crystals #e58bff emerging from it, purple inner luminosity confined WITHIN crystals; pale icy-blue strong light from UPPER LEFT on rock facets, LOWER RIGHT deeply shadowed, extremely thin faint violet rim on solid rock edge only. Desaturated rough rock, sharp mineral grain, physically detailed hexagonal purple prism facets, neither cartoon nor vector, low-poly, linework, toy/plastic CGI. Change the form, not the series style. NEW unmistakably different silhouette: a squat roughly circular, broad rounded-TRIANGULAR boulder with ONE broad blunt top-center crown, a large rounded LOWER LEFT buttress and rounded LOWER RIGHT shoulder, slightly flattened base. Width/height approx 1.08, maximum 1.25. Outer outline mostly contiguous bulky rock; a few short crystal tips stay close to its circular perimeter. NO two pointed upper peaks, NO long pear form, NO narrow diagonal geode open cavity, NO giant long crystals projecting far around rim. Crystal arrangement: a clearly readable HORIZONTAL belt of several stout SHORT broad purple crystalline prisms embedded across the CENTRAL front face, the brightest large cluster slightly left of center pointing outward/upward; a smaller integrated pair at upper right; one short violet crystal embedded low right. Dark rock remains roughly 65% of silhouette with a substantial uninterrupted solid rock cap at top and a heavy rocky lower base. Deep small impact craters high left and low center. Crystals have pale lilac #e58bff inner cores, violet shadow facets and crisp blue-white reflected highlights, no light haze outside the object. Readable material at 64 pixels. ONE complete isolated object centered on SQUARE canvas, about 85% occupancy and generous clear margins. GENUINE TRANSPARENT ALPHA background, no painted black or checkerboard. Absolutely no scene, floor, ground shadow, detached crystals, debris, starfield, particles, smoke, glow spill, bloom, lens flare, tail, flame or trails. No text, logo, border, UI, watermark or signature. Output exactly ONE finished asteroid sprite, not a contact sheet or variants. Fresh independent random generation, distinct new seed, not an edit of preceding iron or ice.
+```
