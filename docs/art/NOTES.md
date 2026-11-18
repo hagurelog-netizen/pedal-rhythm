@@ -353,3 +353,73 @@ Generate ONE NEW standalone game asset: rock_ice_3, third ice asteroid sprite, v
 ```text
 Generate ONE NEW standalone game asset: rock_crystal_3, a third purple-crystal asteroid, in a strict realistically textured hard-SF concept-art digital painting style. Material and lighting match this series: coarse CHARCOAL DARK GRAY pitted cratered meteorite rock; translucent vivid PURPLE crystals #e58bff emerging from it, purple inner luminosity confined WITHIN crystals; pale icy-blue strong light from UPPER LEFT on rock facets, LOWER RIGHT deeply shadowed, extremely thin faint violet rim on solid rock edge only. Desaturated rough rock, sharp mineral grain, physically detailed hexagonal purple prism facets, neither cartoon nor vector, low-poly, linework, toy/plastic CGI. Change the form, not the series style. NEW unmistakably different silhouette: a squat roughly circular, broad rounded-TRIANGULAR boulder with ONE broad blunt top-center crown, a large rounded LOWER LEFT buttress and rounded LOWER RIGHT shoulder, slightly flattened base. Width/height approx 1.08, maximum 1.25. Outer outline mostly contiguous bulky rock; a few short crystal tips stay close to its circular perimeter. NO two pointed upper peaks, NO long pear form, NO narrow diagonal geode open cavity, NO giant long crystals projecting far around rim. Crystal arrangement: a clearly readable HORIZONTAL belt of several stout SHORT broad purple crystalline prisms embedded across the CENTRAL front face, the brightest large cluster slightly left of center pointing outward/upward; a smaller integrated pair at upper right; one short violet crystal embedded low right. Dark rock remains roughly 65% of silhouette with a substantial uninterrupted solid rock cap at top and a heavy rocky lower base. Deep small impact craters high left and low center. Crystals have pale lilac #e58bff inner cores, violet shadow facets and crisp blue-white reflected highlights, no light haze outside the object. Readable material at 64 pixels. ONE complete isolated object centered on SQUARE canvas, about 85% occupancy and generous clear margins. GENUINE TRANSPARENT ALPHA background, no painted black or checkerboard. Absolutely no scene, floor, ground shadow, detached crystals, debris, starfield, particles, smoke, glow spill, bloom, lens flare, tail, flame or trails. No text, logo, border, UI, watermark or signature. Output exactly ONE finished asteroid sprite, not a contact sheet or variants. Fresh independent random generation, distinct new seed, not an edit of preceding iron or ice.
 ```
+
+## round 6（2026-11-18）：鉄3・結晶3の色面積改善
+
+- BRIEF.md・REVIEW.mdを全文確認。開始時のクリーンなmain（360e0d9）からart/round-6を作成。合格済み画像・コード・BRIEF・REVIEWは変更しない。
+- 組み込みimage_gen.imagegenで各1枚を新規生成。作り直しは鉄3・結晶3とも0回（各1回で目標内）。鉄の参照付き呼び出しは参照読取の環境エラーで生成に進まなかったため、生成回数には含めない。
+- seedはツールに指定・返却欄がなく数値の相違確認はできないが、各プロンプトで独立した新しい乱数を要求。編集結果の再編集はしていない。
+- 絵の生成・着色は画像生成のみ。Pillowは透明処理・トリミング・縮小・中央配置・PNG保存・面積計測・preview配置とラベル付けだけに使用。RGBの描画・塗り足し・色相変更・ノイズ生成なし。
+
+### 最終ファイル
+
+| ファイル | 寸法・形式 | 容量 bytes / KiB | 物体サイズ / 縦横比（長辺/短辺） |
+|---|---|---|---|
+| public/game/assets/rock_iron_3.png | 512×512 RGBA PNG | 326,105 / 318.46 | 436×362 / 1.2044 |
+| public/game/assets/rock_crystal_3.png | 512×512 RGBA PNG | 398,726 / 389.38 | 436×423 / 1.0307 |
+
+最長辺436px（85.16%）で中央配置、透明背景。400 KBを400,000 bytesと解釈しても両方条件内。原本の物体外にalpha=1程度の残留があるためalpha<=8だけ完全透明にし、残ったalphaのbboxを切り詰めてLANCZOS縮小。RGB補正なし。最終bboxは鉄(38,75)-(474,437)、結晶(38,44)-(474,467)。端数1pxは整数中央配置による。
+
+### 色面積（測定のみ・補正なし）
+
+分母はalpha>0の画素数（アルファ加重なし）。RGBは0〜255、HSVのHは度、Sは0〜1。条件は参照1・2を含め全画像共通。
+
+- 鉄：R>=70、G>=30、R>=1.25G、G>=1.15B、R>=1.6B、S>=0.35、12<=H<=50をすべて満たす橙。
+- 結晶：R>=60、B>=70、R>=1.2G、B>=1.3G、S>=0.25、265<=H<=325をすべて満たす紫。
+- 64px値は512pxから64×64にLANCZOS縮小後、同じ条件で測定。
+
+| 画像 | 色画素 / 非透明画素（512px） | 512px面積比 | 64px面積比 |
+|---|---|---|---|
+| 鉄1・合格済み | 16,743 / 137,781 | 12.1519% | 11.7818% |
+| 鉄2・合格済み | 23,259 / 134,083 | 17.3467% | 17.0068% |
+| 鉄3・旧round 5 | 6,797 / 124,564 | 5.4566% | 未計測 |
+| **鉄3・新round 6** | **37,451 / 119,253** | **31.4047%** | **31.2530%** |
+| 結晶1・合格済み | 50,813 / 136,313 | 37.2767% | 38.6060% |
+| 結晶2・合格済み | 36,523 / 138,255 | 26.4171% | 28.5301% |
+| 結晶3・旧round 5 | 25,445 / 130,173 | 19.5471% | 未計測 |
+| **結晶3・新round 6** | **69,588 / 142,949** | **48.6803%** | **49.7227%** |
+
+新鉄3は25〜35%、新結晶3は35〜50%を満たし、64pxでも目安内。同じ測定では新3番が1・2より色の割合が高い。厳密な鉱石領域の分割ではなく、暗い錆や白い結晶ハイライトを除外し得るため、参考1・2の値はレビューの主観的面積と一致しない。比較のために閾値を調整していない。
+
+### preview更新
+
+既存1536×5204を全画素保持し、下に440px追加して1536×5644にした。背景#060818。鉄と結晶それぞれ左に1・2・3旧round 5、右に1・2・3新round 6を64×64で配置し、日本語で合格済み／旧／新を明記。1・2は未変更の原本。旧3番はart/round-5のGit blobをメモリで読み、作業ツリーに戻していない。保存後も既存上部5204行のRGB全画素一致を検証。保持部分のSHA-256は1f6a114e3f31ee49c3c2f4467f405def2c8aa2f7195978208a64c2fadc513e4a。
+
+### 原本保存場所
+
+- 鉄3：C:\Users\manga\.codex\generated_images\01a1ec69-1d85-7f12-9bde-2291f51e15fd\call_2pMWkG3a6CDLebELs8CmtkKN.png
+- 結晶3：C:\Users\manga\.codex\generated_images\01a1ec69-1d85-7f12-9bde-2291f51e15fd\call_WiQ62AyI5xPusybgGSr61mYf.png
+- 両方1254×1254。生成原本は変更せず保存。旧3番はGitのart/round-5に保持。
+
+### 環境障害・気になる点
+
+- 添付の旧鉄3・旧結晶3はファイルが見つからないと表示され、開始時のmainにもなかった。Gitには残っていたため数値比較と旧版previewに利用した。
+- 参照1・2を生成ツールに渡すとWindows sandboxのhelper_sandbox_lock_failed / SetNamedSecurityInfoW failed: 5で参照読取が失敗。指示どおり止まらず、参照なしで本文の視覚仕様と会話内の添付参考に沿って生成。リポジトリ画像をview_image等で開き直していない。
+- 鉄3の低い五角形の冠・丸い肩・大きな左下クレーターは前回NOTESのプロンプトを引き継いだ。ただし旧画像を直接参照した編集ではなく、**旧版との輪郭の完全一致は保証できない**。
+- 生成ツール内表示では幅広い橙の鉱脈、左下クレーター、大型で外側に突き出す紫結晶と内部発光、左上からの青白い光を確認。再表示禁止の指示と読取障害により、**後処理後の納品画像・64px比較図の目視確認は未実施**。面積・透明性・寸法・容量・既存preview保持は数値検証済み。最終目視判定は依頼者にお願いする。
+- 新結晶3は紫の上限50%に近い（512px 48.6803%、64px 49.7227%）。容量も十進400KBに近いが条件内。1・2より結晶の色が強く見える可能性がある。
+- 生成表示の輪郭に細い紫・青系の色がある。意図したリムライトか余分な縁色かは最終previewで確認してほしい。プログラムによる色修正はしていない。
+
+### 新しい生成プロンプト（実際に使用した全文）
+
+#### rock_iron_3.png（生成1回・作り直し0回）
+
+```text
+Generate exactly ONE replacement game sprite, rock_iron_3.png. The approved iron references already visible in the conversation establish the appearance: charcoal gray pitted granular realistic meteorite, large warm orange rusty seams, cold blue-white upper-left light, deep lower-right shadow and thin faint violet rim. The file-based reference loading failed; use this precise visual specification, do not attempt to load local images. Hard-SF realistic concept-art digital painting, richly textured and granular, NOT plastic CGI, not cartoon, not low-poly. Preserve the third-asteroid silhouette from prior design: squat approximately ROUND rounded-PENTAGONAL boulder, width/height about 1.10 and strictly <=1.25, broad almost-flat gently sloping LOW CROWN with ONE blunt low central shoulder, full bulbous LEFT shoulder, broad beveled RIGHT edge, flattened rounded bottom. NO twin upper peaks, pointed summit, narrow waist, long oval or pear. One especially LARGE concave impact CRATER on the FRONT LOWER LEFT; smaller deep crater high right, subordinate pits. Thick charcoal-gray cratered meteorite rock. Primary change: opaque rusty ORANGE mineral deposits keyed to #ffa25c must occupy 30-35% of the entire visible object. Big BROAD orange surface patches and wide mineral bands, not fine lines. Broad broken rust seam descends upper middle toward lower right, wide branches and orange plates cross central face and crater lip. Keep the low crown shape and lower-left large crater readable. Rust has granular non-emissive oxidized metal texture, no molten lava or glowing fissures. At 64px must instantly read as ORANGE iron rock. Strong pale icy BLUE-WHITE key light from UPPER LEFT on cool rough stone ridges; LOWER RIGHT deep shadow, extremely thin faint PURPLE rim on solid edge only. Single complete object centered in square canvas, about 85% occupancy, empty margins all sides. GENUINE TRANSPARENT ALPHA background, not black fill or painted checkerboard. No floor, ground shadow, backdrop, scene, detached debris, particles, aura, glow spill, haze, bloom, stars, sparks, trail, flame, text, border, logo or watermark. Exactly ONE asteroid, no contact sheet. Fresh independent generation with a distinct new random seed, not an iterative edit.
+```
+
+#### rock_crystal_3.png（生成1回・作り直し0回）
+
+```text
+Generate exactly ONE standalone replacement game sprite rock_crystal_3.png. New independent random generation, different new seed, NOT an edit of the preceding iron asteroid. Hard SF realistic concept-art digital painting matching the purple crystal asteroid references already visible in this conversation: coarse dark CHARCOAL gray crater-pitted meteorite stone, faceted amethyst mineral prisms, very rich realistic granular texture; not cartoon, vector, linework, low-poly, plastic or cheap CGI. Distinct roughly ROUND bulky rock asteroid, overall width/height about 1.05 and strictly no greater than 1.25 including all crystals. Primary requirement: numerous LARGE BROAD vivid PURPLE translucent crystal clusters keyed to #e58bff cover 42-48% of the entire visible object, not a tiny embedded central band. Big purple crystals emerge from upper-left shoulder, upper-right rim and lower-left/right flanks, several stout clearly faceted hexagonal prisms project OUTSIDE the rock outline, creating a crystal-encrusted round silhouette. Central/front large purple cluster, smaller visible mineral facets across lower face, with dark textured rock and deep craters between clusters. Show enough broad bright magenta-lilac PURPLE crystal faces to read immediately as a PURPLE rock at 64 pixels, roughly the same purple prominence as the two approved crystal references. Strong inner luminous lilac-pink cores INSIDE transparent crystals, purple/violet shadow facets with sharp pale specular highlights, comparable luminosity to the references. No external glow haze. Strong cool blue-white directional key from UPPER LEFT illuminates rock ridges, LOWER RIGHT in deep shadow with an extremely thin faint violet rim light only on the actual edge. No orange or rusty metal. ONE complete object fully contained and centered in a square canvas occupying about 85%, clear safe margins around tips. GENUINE transparent ALPHA background, not black painted backdrop or checkerboard. Absolutely no floor, ground plane, cast ground shadow, environment, stars, detached shards, particles, smoke, bloom, aura, glow spill, light beyond outline, lens flare, tail, trail, text, UI, border, logo, signature or watermark. Output ONE isolated finished asteroid only, no sheet, no variations. File reference access is unavailable; use this specification and the visible conversation reference style.
+```
