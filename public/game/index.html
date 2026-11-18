@@ -992,7 +992,7 @@
     sprite('ship.png', 384, 0.92, function (c) { ART.ship = c; });
     sprite('far.png', 384, 0.88, function (c) { ART.far = c; });
     sprite('debris.png', 256, 0.88, function (c) { ART.debris = c; });
-    [1, 2, 3, 4, 5].forEach(function (v) { sprite('station_' + v + '.png', 640, 0.96, function (c) { ART.station[v - 1] = c; }); });
+    [1, 2, 3, 4, 5].forEach(function (v) { img('station_' + v + '.png', function (im) { ART.station[v - 1] = im; if (!$('home').hidden) renderHome(); }); }); // 5 段階で縮尺をそろえてあるので、切り詰めずにそのまま使う
     img('bg.jpg', function (im) { ART.bg = im; if (!$('play').hidden) buildBackground(); });
     img('base_bg.jpg', function (im) { ART.baseBg = im; if (!$('home').hidden) renderHome(); });
   }
@@ -1266,12 +1266,12 @@
       var blink = d.started ? 1 : 0.5 + 0.5 * Math.sin(VT * 10);
       g.fillStyle = 'rgba(255,70,70,' + (0.13 * blink) + ')'; quad(d.lane - 1.5, d.lane - 0.5, 0, sB); g.fill();
       if (!d.started) return;
-      font(g, '400', H * 0.03, FD); g.fillStyle = 'rgba(255,110,110,0.9)'; txt(g, '封鎖中 ' + Math.ceil(d.to - G.T), xOf(d.lane - 1, 0.93), yOf(0.93) + H * 0.1, 'center');
+      font(g, '400', H * 0.03, FD); g.fillStyle = 'rgba(255,110,110,0.9)'; txt(g, '封鎖中 ' + Math.ceil(d.to - G.T), xOf(d.lane - 1, 0.42), yOf(0.42), 'center');
       for (var k = 0; k < 14; k++) {
         var dd = ((k * 0.0719 + VT * 0.3 * (0.7 + (k % 3) * 0.2)) % 1), ds = dd * dd * sB, rad = H * 0.006 + H * 0.03 * ds * (0.5 + (k % 4) * 0.25), size = rad / 0.44;
         var ux = d.lane - 1 + (((k * 37) % 9) - 4) / 11;
         g.save(); g.globalAlpha = 0.9; g.translate(xOf(ux, ds), yOf(ds) - rad); g.rotate(k * 1.3 + VT * (0.5 + (k % 3) * 0.4));
-        g.drawImage(SPR.shard, -size / 2, -size / 2, size, size * 0.6); g.restore();
+        g.drawImage(SPR.shard, -size / 2, -size / 2, size, ART.debris ? size : size * 0.6); g.restore();
       }
     });
     // レール
@@ -1534,18 +1534,19 @@
   }
 
   // ================= 拠点の絵 =================
+  var STAGES = [0, 3, 8, 15, 24]; // 拠点レベルがこれ以上になると、次の段階の絵になる
   function drawBase(c, level) {
     var r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
     if (!r.width) return;
     c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
     var g = c.getContext('2d'), w = r.width, h = r.height, rf = mulberry(7), i;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    var stage = -1, want = [0, 2, 5, 9, 14].filter(function (t) { return level >= t; }).length - 1;
+    var stage = -1, want = STAGES.filter(function (t) { return level >= t; }).length - 1;
     for (i = want; i >= 0; i--) if (ART.station[i]) { stage = i; break; }
     if (ART.baseBg || stage >= 0) { // 拠点の絵がある場合
       if (ART.baseBg) drawCover(g, ART.baseBg, w, h);
       else { g.fillStyle = '#05060f'; g.fillRect(0, 0, w, h); if (ART.bg) drawCover(g, ART.bg, w, h); }
-      if (stage >= 0) { var ss = h * 0.92; g.drawImage(ART.station[stage], w * 0.55 - ss / 2, h * 0.47 - ss / 2, ss, ss); }
+      if (stage >= 0) { var ss = h * 1.02; g.drawImage(ART.station[stage], w * 0.53 - ss / 2, h * 0.5 - ss / 2, ss, ss); }
       drawShip(g, w * 0.86, h * 0.56, h * 0.07, -0.25, 0.5, 0, ORE.iron.color, false, 0.2);
       if (stage >= 0) return;
     }
@@ -1638,7 +1639,8 @@
   function renderHome() {
     renderStock();
     $('baseName').textContent = '採掘拠点 レベル ' + S.base;
-    $('baseNote').textContent = S.base === 0 ? '依頼を達成すると、ここに施設が増えていきます。' : 'これまでの出航 ' + S.runs + ' 回';
+    var nextT = STAGES.filter(function (t) { return t > S.base; })[0];
+    $('baseNote').textContent = (nextT !== undefined ? '次の増築まで あと ' + (nextT - S.base) + '' : '拠点は最大まで育ちました') + '  ・  出航 ' + S.runs + ' 回';
     drawBase($('baseCv'), S.base);
     var sec = SECTORS[S.sector]; $('sectorName').textContent = sec.name; $('sectorDesc').textContent = sec.desc;
     renderMissions($('homeMissions'), makeMissions(S.runs, S.prefs.min), false);
@@ -1798,7 +1800,7 @@
   // 動作確認用(画面の動作には使わない)
   window.__space = {
     get G() { return G; }, get S() { return S; }, setCadence: setCadence, parseIndoorBikeCadence: parseIndoorBikeCadence,
-    get ART() { return ART; }, get SPR() { return SPR; }, laneRaw: laneRaw, laneHyst: laneHyst, buildPhases: buildPhases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
+    get ART() { return ART; }, STAGES: STAGES, get SPR() { return SPR; }, laneRaw: laneRaw, laneHyst: laneHyst, buildPhases: buildPhases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
   };
 })();
 </script>
