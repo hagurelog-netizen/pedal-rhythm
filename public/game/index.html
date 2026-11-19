@@ -193,6 +193,7 @@
         <button id="btnManual" type="button" class="ghost">バイクなしで試す(スライダー)</button>
       </div>
       <p class="muted" id="bikeStatus">入力を選んでください。</p>
+      <label class="muted" style="display:flex;gap:10px;align-items:center;margin-top:8px"><input type="checkbox" id="chkPredict" style="width:22px;height:22px"> バイクの数字の遅れを少し補う(先読み)。おすすめ: オン</label>
       <button id="btnStart" type="button" disabled>出航する</button>
     </div>
 
@@ -204,13 +205,14 @@
     <div class="card">
       <h2>遊び方</h2>
       <ul class="rules">
-        <li>漕ぐ速さで船が左右に動きます。<span class="c-ice">遅い = 左(氷が多い)</span>、<span class="c-iron">基準 = 中央(鉄が多い)</span>、<span class="c-crystal">速い = 右(結晶が多い)</span>。基準から 4 rpm 上げ下げすると、となりのレーンに移ります。</li>
+        <li>漕ぐ速さで船が左右に動きます。<span class="c-ice">遅い = 左(氷が多い)</span>、<span class="c-iron">基準 = 中央(鉄が多い)</span>、<span class="c-crystal">速い = 右(結晶が多い)</span>。基準から 4 rpm 上げ下げすると、となりのレーンに移ります。下げすぎても左のまま、上げすぎても右のままです(ただし遅すぎると採掘が遅く、速すぎると熱が速く溜まります)。</li>
         <li>基準は、あなたのペースに合わせます。最初の 1 分半で楽に漕げる回転数を測り、次回からもそれを使います。</li>
         <li>前から小惑星が 2〜3 個来ます。狙うものを自分で決めて、そのレーンに合わせるとロックオン。同じレーンで漕ぎ続けると割れて、鉱石が手に入ります。</li>
-        <li>右のレーンでは熱が溜まります。満タンで 6 秒停止。<span class="c-ice">氷</span>を掘ると一気に冷えます。「結晶 → 氷で冷やす → 結晶」が基本の組み立てです。</li>
-        <li>途切れずに割り続けると連鎖になり、取れ高と音楽が増えます。ゆっくりのレーンを選んでも連鎖は続きます。</li>
+        <li>右のレーンでは熱が溜まります。岩の札と熱ゲージに「この岩を割ると熱がどこまで上がるか」が出ます。満タンになると 4 秒止まりますが、岩は逃げず、連鎖も続きます。3/4 以上削っていれば、そのまま割り切れます。<span class="c-ice">氷</span>を掘ると一気に冷えます。</li>
+        <li>途切れずに割り続けると連鎖になり、取れ高と音楽が増えます。ゆっくりのレーンを選んでも連鎖は続きます。狙った岩から外れても、3.5 秒以内に戻れば続きを掘れます。</li>
         <li>区間の始めに「ノブを回してみよう」と出ます。回したら「回した!」を押すと、その区間は取れ高 1.2 倍。足が痛いときは、ノブを軽くして構いません。</li>
         <li>集めた鉱石で船を改造できます。依頼を達成すると拠点が育ちます。休んでも何も減りません。</li>
+        <li>このバイクの回転数は、ペダルを変えてから 3〜5 秒遅れて数字に出ます。小惑星は 8 秒前から見えるので、早めにペースを変え始めて、数字が追いつくのを待ってください。</li>
         <li>ビートは、いまいるレーンの真ん中の速さで鳴ります。漕ぐのをやめると自動で一時停止します。</li>
       </ul>
     </div>
@@ -298,12 +300,15 @@
   var RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   // 調整用の数字
-  var APPROACH = 4.5;   // 次の小惑星が近づいてくる秒数(回転数を変える時間 + データの 1 秒遅れ)
-  var WINDOW = 6;       // 手の届く位置にとどまる秒数
+  // このバイクのケイデンスは直近数回転の平均で、ペダルの変化が数字に出るまで 3〜5 秒かかる。それを見越した時間にする
+  var APPROACH = 8;     // 次の小惑星が見えてから届くまでの秒数(早めにペースを変え始められる)
+  var WINDOW = 9;       // 手の届く位置にとどまる秒数
   var LOCK_HOLD = 0.8;  // 同じレーンにこの秒数いたらロックオン(通り過ぎただけでは掴まない)
-  var OFF_LIMIT = 2.5;  // 採掘中にレーンを外れていられる秒数
+  var OFF_LIMIT = 5;    // 採掘中にレーンを外れていられる秒数(下げすぎ・上げすぎを直す時間)
   var DRIFT_LIMIT = 5;  // 漂流がこの秒数続くと連鎖が切れる
-  var STALL = 6;        // オーバーヒートで止まる秒数
+  var STALL = 4;        // オーバーヒートで止まる秒数(連鎖は切らず、狙っている岩も逃げない)
+  var SLOW = 12;        // 基準よりこれ以上遅いと「ゆっくりすぎ」(採掘が半分の速さ)
+  var FINISH_AT = 0.75; // ここまで削っていれば、熱が満タンになった瞬間に割り切る
   var GRACE = 8;        // 区間が変わった直後の猶予
   var RAMP = 20;        // 基準の回転数が切り替わるのにかける秒数(急に上げない)
   var CALIB = 90;       // 最初にあなたのペースを測る秒数
@@ -361,7 +366,7 @@
   // ================= 記録 =================
   function defaultSave() {
     return { v: 2, ore: { ice: 0, iron: 0, crystal: 0 }, up: { cooler: 0, drill: 0, radar: 0 }, base: 0, runs: 0, sector: 'belt', history: [], comfort: null,
-      prefs: { min: 20, level: 'normal', sound: true } };
+      prefs: { min: 20, level: 'normal', sound: true, predict: true } };
   }
   function normalizeSave(o) {
     var d = defaultSave();
@@ -376,6 +381,7 @@
     if ([15, 20, 30].indexOf(p.min) >= 0) d.prefs.min = p.min;
     if (LEVELS[p.level]) d.prefs.level = p.level;
     d.prefs.sound = p.sound !== false;
+    d.prefs.predict = p.predict !== false;
     return d;
   }
   function loadSave() { try { return normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY))); } catch (e) { return defaultSave(); } }
@@ -384,7 +390,24 @@
 
   // ================= 入力(バイク / スライダー) =================
   var input = { mode: null, latest: null, at: 0, device: null, connected: false };
-  function setCadence(v) { input.latest = v; input.at = performance.now(); }
+  // バイクの数字の遅れを少しだけ補う先読み: いまの値 + 1 秒 × 直近 2.5 秒の傾き(差は ±4 rpm まで)
+  // (シミュレーションでは、レーンが替わるまでの平均が約 4.4 秒 → 約 3.4 秒。行きすぎはほぼ出ない)
+  var hist = [];
+  function predict(v, now) {
+    if (v <= 0) { hist = []; return v; }
+    hist.push([now, v]); hist = hist.filter(function (h) { return now - h[0] <= 2500; });
+    if (hist.length < 2) return v;
+    var mt = 0, mv = 0; hist.forEach(function (h) { mt += h[0]; mv += h[1]; }); mt /= hist.length; mv /= hist.length;
+    var num = 0, den = 0; hist.forEach(function (h) { num += (h[0] - mt) * (h[1] - mv); den += (h[0] - mt) * (h[0] - mt); });
+    var slope = den ? num / den * 1000 : 0; // rpm / 秒
+    return v + clamp(slope * 1.0, -4, 4);
+  }
+  function setCadence(v, fromBike) {
+    var now = performance.now();
+    input.raw = v;
+    input.latest = fromBike && S.prefs.predict ? predict(v, now) : v;
+    input.at = now;
+  }
   function cadenceNow() {
     if (input.latest === null || performance.now() - input.at > STALE_MS / SPEED) return null;
     return input.latest;
@@ -406,7 +429,7 @@
       .then(function (ch) {
         ch.addEventListener('characteristicvaluechanged', function (ev) {
           var c = parseIndoorBikeCadence(ev.target.value);
-          if (c !== null) setCadence(c);
+          if (c !== null) setCadence(c, true);
         });
         return ch.startNotifications();
       }).then(function () {
@@ -478,7 +501,7 @@
   }
   function makeMissions(runs, minutes) {
     var T = [{ iron: 240, ice: 100, crystal: 30 }, { iron: 150, ice: 190, crystal: 30 }, { iron: 150, ice: 100, crystal: 60 }];
-    var t = T[runs % 3], k = minutes / 20;
+    var t = T[runs % 3], k = minutes / 20 * 0.85; // 小惑星が 8 秒前から来るようになって数が減ったぶん、少なめに
     return ['iron', 'ice', 'crystal'].map(function (type) {
       var step = type === 'crystal' ? 2 : 5;
       return { type: type, need: Math.max(step, Math.round(t[type] * k / step) * step), done: false };
@@ -494,14 +517,25 @@
     return lerp(G.phases[i - 1].base, p.base, clamp((t - p.start) / RAMP, 0, 1));
   }
   // レーン: -1 漂流 / 0 低 / 1 中 / 2 高 / 3 回しすぎ。境目は整数の間に置き、0.5 rpm だけ遊びを持たせる(基準が動いている途中の揺れ対策)
-  var LO = [-Infinity, -LANE_OUT - 0.5, -LANE_IN - 0.5, LANE_IN + 0.5, LANE_OUT + 0.5], HI = [-LANE_OUT - 0.5, -LANE_IN - 0.5, LANE_IN + 0.5, LANE_OUT + 0.5, Infinity];
-  function laneRaw(d) { return d < LO[1] ? -1 : (d < LO[2] ? 0 : (d <= HI[2] ? 1 : (d <= HI[3] ? 2 : 3))); }
+  // 左のレーンには下限がない(下げすぎても左のまま)。右のレーンは上げすぎると「回しすぎ」(3)で、熱が速く溜まるだけ
+  var LO = [-Infinity, -LANE_IN - 0.5, LANE_IN + 0.5, LANE_OUT + 0.5], HI = [-LANE_IN - 0.5, LANE_IN + 0.5, LANE_OUT + 0.5, Infinity];
+  function laneRaw(d) { return d < LO[1] ? 0 : (d <= HI[1] ? 1 : (d <= HI[2] ? 2 : 3)); }
   function laneHyst(d, cur) {
     var raw = laneRaw(d);
-    if (cur === null || raw === cur) return raw;
-    var i = cur + 1;
-    if (d >= LO[i] - 0.5 && d <= HI[i] + 0.5) return cur;
+    if (cur === null || cur < 0 || raw === cur) return raw;
+    if (d >= LO[cur] - 0.5 && d <= HI[cur] + 0.5) return cur;
     return raw;
+  }
+  function heatRate(lane) { // 1 秒あたりの熱の増え方(マイナスは冷える)
+    var hf = (1 - 0.15 * S.up.cooler) * G.sector.heat;
+    return lane === 3 ? 6 * hf : (lane === 2 ? 2.6 * hf : (lane === 1 ? -0.5 : -2));
+  }
+  // この岩を今から割り切ったときの熱。ok: 満タンにならない / edge: 満タンになるが 3/4 以上削れているので割り切れる / over: 途中で止まる
+  function heatForecast(r) {
+    var rate = heatRate(r.lane) - (r.type === 'ice' || r.type === 'comet' ? 5 : 0), secs = Math.max(0, r.hp) / G.power, end = G.heat + Math.max(0, rate) * secs;
+    if (rate <= 0 || end < 100) return { end: Math.min(100, end), add: Math.max(0, rate) * secs, state: 'ok' };
+    var t100 = Math.max(0, (100 - G.heat) / rate), prog = (r.hpMax - r.hp + t100 * G.power) / r.hpMax;
+    return { end: 100, add: rate * secs, state: prog >= FINISH_AT ? 'edge' : 'over' };
   }
   function chainMult() { return G.chain >= 12 ? 1.5 : (G.chain >= 5 ? 1.2 : 1); }
   function knobMult() { return G.knobDone[phaseIdx(G.T)] ? 1.2 : 1; }
@@ -641,9 +675,8 @@
   }
   function missWave() { advance(); }
   function overheat() {
-    G.heat = 100; G.stallUntil = G.T + STALL; G.chain = 0; G.overheats++;
-    if (G.lock) abandon('');
-    banner('OVERHEAT', 'オーバーヒート', STALL + ' 秒間 冷却します。連鎖が切れました', COL.danger, 4);
+    G.heat = 100; G.stallUntil = G.T + STALL; G.overheats++;
+    banner('OVERHEAT', 'オーバーヒート', STALL + ' 秒間 冷却します。岩は逃げません(連鎖も続きます)', COL.danger, 4);
     G.flashAt = VT; G.flashCol = COL.danger; G.shakeAt = VT; sfx.overheat();
   }
   function enterPhase(idx) {
@@ -670,19 +703,16 @@
       }
     }
     var B = baseAt(G.T); G.B = B;
-    var ln = laneHyst(cv - B, G.lane);
+    var ln = cv < 30 ? -1 : laneHyst(cv - B, G.lane); // 30 rpm 未満は、ほぼ止まっている(漂流)
     if (ln !== G.lane) { G.lane = ln; G.laneSince = G.T; }
     var stalled = G.T < G.stallUntil, grace = G.T < G.graceUntil;
     var ml = G.lane < 0 ? -1 : Math.min(G.lane, 2);
     G.ml = ml;
 
     // 熱
-    var hf = (1 - 0.15 * S.up.cooler) * G.sector.heat;
+    G.slow = G.lane === 0 && cv - B < -SLOW;
     if (stalled) G.heat -= 7.5 * dt;
-    else if (G.lane === 3) G.heat += 8 * hf * dt;
-    else if (G.lane === 2) G.heat += 3.5 * hf * dt;
-    else if (G.lane === 1) G.heat -= 0.5 * dt;
-    else G.heat -= 2 * dt;
+    else G.heat += heatRate(G.lane) * dt;
 
     // 宇宙ゴミ
     G.debris.forEach(function (d) {
@@ -703,11 +733,11 @@
     if (G.lock) {
       var r = G.lock;
       if (!stalled && ml === r.lane) {
-        r.hp -= G.power * dt; G.offT = 0; G.mining = true;
+        r.hp -= G.power * (G.slow ? 0.5 : 1) * dt; G.offT = 0; G.mining = true;
         if (r.type === 'ice' || r.type === 'comet') G.heat -= 5 * dt;
         if (r.hp <= 0) shatter(r);
       } else {
-        if (!grace) G.offT += dt;
+        if (!grace && !stalled) G.offT += dt;
         if (G.offT >= OFF_LIMIT) abandon('レーンを離れた');
       }
     } else {
@@ -724,8 +754,11 @@
     }
 
     G.heat = clamp(G.heat, 0, 100);
-    if (G.heat >= 100 && G.T >= G.stallUntil) overheat();
-    if (G.heat >= 75 && !G.heatWarned && G.T >= G.stallUntil) { G.heatWarned = true; toast('熱が危険! 氷を掘るか、レーンを下げよう', COL.danger, 3); sfx.warn(); }
+    if (G.heat >= 100 && G.T >= G.stallUntil) {
+      if (G.lock && G.mining && 1 - G.lock.hp / G.lock.hpMax >= FINISH_AT) { toast('ぎりぎりで割った!', COL.go, 2.6); shatter(G.lock); }
+      overheat();
+    }
+    if (G.heat >= 75 && !G.heatWarned && G.T >= G.stallUntil) { G.heatWarned = true; toast('熱が高い! 氷を掘るか、レーンを下げよう', COL.danger, 3); sfx.warn(); }
     if (G.heat < 55) G.heatWarned = false;
 
     // 漂流
@@ -1344,11 +1377,14 @@
       if (r.ds > 0.22) {
         var ly = r.dy - r.dr - H * 0.034, n = 0, k, label = '';
         for (k in r.yield) { label += (n ? '  ' : '') + ORE[k].name + ' ' + r.yield[k]; n++; }
-        font(g, '700', H * 0.027, FB); var tw = g.measureText(label).width + H * 0.03, th = H * 0.04;
+        var fc = r.lane === 2 && r.type !== 'ice' && r.type !== 'comet' ? heatForecast(r) : null, ftxt = '', fcol = COL.text;
+        if (fc) { ftxt = fc.state === 'ok' ? '  熱 +' + Math.round(fc.add) : (fc.state === 'edge' ? '  熱 ぎりぎり' : '  熱 足りない'); fcol = fc.state === 'ok' ? '#9ff0c0' : (fc.state === 'edge' ? COL.go : COL.danger); }
+        font(g, '700', H * 0.027, FB); var lw = g.measureText(label).width, fw = ftxt ? g.measureText(ftxt).width : 0, tw = lw + fw + H * 0.03, th = H * 0.04;
         g.globalAlpha = clamp((r.ds - 0.22) / 0.15, 0, 1);
         g.fillStyle = 'rgba(6,8,24,0.78)'; rr(g, r.dx - tw / 2, ly - th / 2, tw, th, th / 2); g.fill();
-        g.strokeStyle = rgba(ORE[r.type].color, 0.8); g.lineWidth = 1.5; g.stroke();
-        g.fillStyle = ORE[r.type].color; txt(g, label, r.dx, ly + 1, 'center', 'middle');
+        g.strokeStyle = fc && fc.state === 'over' ? COL.danger : rgba(ORE[r.type].color, 0.8); g.lineWidth = 1.5; g.stroke();
+        g.fillStyle = ORE[r.type].color; txt(g, label, r.dx - tw / 2 + H * 0.015, ly + 1, 'left', 'middle');
+        if (ftxt) { g.fillStyle = fcol; txt(g, ftxt, r.dx - tw / 2 + H * 0.015 + lw, ly + 1, 'left', 'middle'); }
         g.globalAlpha = 1;
       }
       // 手の届く位置にいる間の表示
@@ -1394,6 +1430,8 @@
       if (!RM && Math.random() < rdt * 10) emit({ k: 'steam', x: G.shipX + rnd(-1, 1) * sr, y: sy, vx: rnd(-0.03, 0.03) * H, vy: -rnd(0.04, 0.1) * H, t: 0, life: 1.2, size: sr * 0.6 });
     } else if (G.lane === -1 && !G.paused) {
       font(g, '700', H * 0.03, FB); g.fillStyle = COL.sub; txt(g, '漂流中 ― もう少し速く', G.shipX, sy - sr * 2.3, 'center');
+    } else if (G.slow) {
+      font(g, '700', H * 0.03, FB); g.fillStyle = COL.sub; txt(g, 'ゆっくりすぎ ― 採掘が遅くなります', G.shipX, sy - sr * 2.3, 'center');
     } else if (G.lane === 3) {
       font(g, '700', H * 0.03, FB); g.fillStyle = COL.danger; txt(g, '回しすぎ ― 熱が急上昇', G.shipX, sy - sr * 2.3, 'center');
     }
@@ -1437,7 +1475,7 @@
     function GY(v) { return gy1 - (gy1 - gy0) * (clamp(v, B - span, B + span) - (B - span)) / (span * 2); }
     g.fillStyle = 'rgba(238,241,255,0.08)'; rr(g, gx, gy0, gw, gy1 - gy0, gw / 2); g.fill();
     g.fillStyle = 'rgba(255,93,93,0.35)'; g.fillRect(gx, gy0, gw, GY(B + LANE_OUT + 0.5) - gy0);
-    [[LANE_IN + 0.5, LANE_OUT + 0.5, 2], [-LANE_IN - 0.5, LANE_IN + 0.5, 1], [-LANE_OUT - 0.5, -LANE_IN - 0.5, 0]].forEach(function (b) {
+    [[LANE_IN + 0.5, LANE_OUT + 0.5, 2], [-LANE_IN - 0.5, LANE_IN + 0.5, 1], [-span, -LANE_IN - 0.5, 0]].forEach(function (b) {
       var on = b[2] === ml, ya = GY(B + b[1]), yb = GY(B + b[0]);
       g.fillStyle = rgba(LANE_COL[b[2]], on ? 0.95 : 0.4); g.fillRect(gx, ya + 1, gw, yb - ya - 2);
       var my = (ya + yb) / 2, tx = gx + gw + W * 0.022;
@@ -1446,8 +1484,9 @@
       txt(g, LANE_NAME[b[2]], tx + H * 0.026, my - H * 0.012, 'left', 'middle');
       font(g, '700', H * 0.022, FT); g.fillStyle = on ? COL.text : COL.sub;
       var rb = Math.round(B), lo = [rb - LANE_OUT, rb - LANE_IN, rb + LANE_IN + 1][b[2]], hi = [rb - LANE_IN - 1, rb + LANE_IN, rb + LANE_OUT][b[2]];
-      txt(g, lo + '–' + hi, tx - H * 0.012, my + H * 0.02, 'left', 'middle');
+      txt(g, b[2] === 0 ? '〜' + hi : lo + '–' + hi, tx - H * 0.012, my + H * 0.02, 'left', 'middle');
     });
+    g.fillStyle = 'rgba(6,8,24,0.55)'; g.fillRect(gx, GY(B - SLOW - 0.5), gw, gy1 - GY(B - SLOW - 0.5)); // ゆっくりすぎ
     var my2 = GY(G.dispC);
     g.globalCompositeOperation = 'lighter'; g.drawImage(glow('#ffffff'), gx + gw / 2 - H * 0.03, my2 - H * 0.03, H * 0.06, H * 0.06); g.globalCompositeOperation = 'source-over';
     g.fillStyle = '#ffffff'; g.fillRect(gx - 4, my2 - 2, gw + 8, 4);
@@ -1475,6 +1514,18 @@
     font(g, '700', H * 0.026, FB); g.fillStyle = hot && Math.sin(VT * 12) > 0 ? COL.danger : COL.sub; txt(g, '熱', px2 + 12, hy + 1, 'left', 'middle');
     g.fillStyle = 'rgba(238,241,255,0.12)'; rr(g, hbx, hy - H * 0.012, hbw, H * 0.024, H * 0.012); g.fill();
     if (hf > 0.01) { g.fillStyle = hcol; rr(g, hbx, hy - H * 0.012, Math.max(H * 0.024, hbw * hf), H * 0.024, H * 0.012); g.fill(); }
+    var tgt = G.lock || null;
+    if (!tgt && ml === 2) G.wave.rocks.forEach(function (r) { if (r.lane === 2 && (r.state === 'in' || r.state === 'far')) tgt = r; });
+    if (tgt && tgt.lane === 2 && G.T >= G.stallUntil) { // この岩を割り切ったときの熱を、うすく重ねて見せる
+      var fc = heatForecast(tgt), fe = clamp(fc.end / 100, 0, 1);
+      if (fe > hf + 0.01) {
+        g.save(); rr(g, hbx, hy - H * 0.012, hbw, H * 0.024, H * 0.012); g.clip();
+        g.fillStyle = fc.state === 'ok' ? 'rgba(255,255,255,0.28)' : (fc.state === 'edge' ? rgba(COL.go, 0.45) : rgba(COL.danger, 0.5));
+        g.fillRect(hbx + hbw * hf, hy - H * 0.012, hbw * (fe - hf), H * 0.024); g.restore();
+      }
+      font(g, '700', H * 0.02, FB); g.fillStyle = fc.state === 'ok' ? COL.sub : (fc.state === 'edge' ? COL.go : COL.danger);
+      txt(g, fc.state === 'ok' ? 'この岩は割れる' : (fc.state === 'edge' ? 'ぎりぎり割れる' : '熱が足りない'), px2 + pw2 - 10, hy - H * 0.024, 'right', 'bottom');
+    }
     g.fillStyle = 'rgba(6,8,24,0.8)'; g.fillRect(hbx + hbw * 0.75, hy - H * 0.012, 2, H * 0.024);
     // 連鎖
     var cy2 = hy + H * 0.075;
@@ -1810,6 +1861,8 @@
   });
 
   setSound(S.prefs.sound);
+  $('chkPredict').checked = S.prefs.predict;
+  $('chkPredict').addEventListener('change', function () { S.prefs.predict = this.checked; save(); });
   renderHome();
   loadArt();
   if (document.fonts && document.fonts.load) {
@@ -1821,7 +1874,7 @@
   // 動作確認用(画面の動作には使わない)
   window.__space = {
     get G() { return G; }, get S() { return S; }, setCadence: setCadence, parseIndoorBikeCadence: parseIndoorBikeCadence,
-    get ART() { return ART; }, STAGES: STAGES, get SPR() { return SPR; }, laneRaw: laneRaw, laneHyst: laneHyst, buildPhases: buildPhases, setBases: setBases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
+    get ART() { return ART; }, STAGES: STAGES, get SPR() { return SPR; }, laneRaw: laneRaw, laneHyst: laneHyst, heatForecast: function (r) { return heatForecast(r); }, buildPhases: buildPhases, setBases: setBases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
   };
 })();
 </script>
