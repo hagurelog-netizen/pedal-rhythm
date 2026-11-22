@@ -194,6 +194,7 @@
       </div>
       <p class="muted" id="bikeStatus">入力を選んでください。</p>
       <label class="muted" style="display:flex;gap:10px;align-items:center;margin-top:8px"><input type="checkbox" id="chkPredict" style="width:22px;height:22px"> バイクの数字の遅れを少し補う(先読み)。おすすめ: オン</label>
+      <label class="muted" style="display:flex;gap:10px;align-items:center;margin-top:6px"><input type="checkbox" id="chkBeat" style="width:22px;height:22px"> ビートを鳴らす(保ちたいペースの目印)。オフにすると効果音だけになります</label>
       <button id="btnStart" type="button" disabled>出航する</button>
     </div>
 
@@ -213,7 +214,8 @@
         <li>区間の始めに「ノブを回してみよう」と出ます。回したら「回した!」を押すと、その区間は取れ高 1.2 倍。足が痛いときは、ノブを軽くして構いません。</li>
         <li>集めた鉱石で船を改造できます。依頼を達成すると拠点が育ちます。休んでも何も減りません。</li>
         <li>このバイクの回転数は、ペダルを変えてから 3〜5 秒遅れて数字に出ます。小惑星は 8 秒前から見えるので、早めにペースを変え始めて、数字が追いつくのを待ってください。</li>
-        <li>ビートは、いまいるレーンの真ん中の速さで鳴ります。漕ぐのをやめると自動で一時停止します。</li>
+        <li>最初の 1 分半は、拠点から小惑星帯へ向かう道中です。いつものペースで楽に漕いでください。そのペースを測って基準にします。</li>
+        <li>ビートは「保ちたいペース」の目印です。ふだんは基準の速さ、岩をロックオンしたら、そのレーンを保てる速さで鳴ります。数字は遅れて動きますが、音に合わせれば数字を待たずにペースを保てます。漕ぐのをやめると自動で一時停止します。</li>
       </ul>
     </div>
 
@@ -366,7 +368,7 @@
   // ================= 記録 =================
   function defaultSave() {
     return { v: 2, ore: { ice: 0, iron: 0, crystal: 0 }, up: { cooler: 0, drill: 0, radar: 0 }, base: 0, runs: 0, sector: 'belt', history: [], comfort: null,
-      prefs: { min: 20, level: 'normal', sound: true, predict: true } };
+      prefs: { min: 20, level: 'normal', sound: true, predict: true, beat: true } };
   }
   function normalizeSave(o) {
     var d = defaultSave();
@@ -382,6 +384,7 @@
     if (LEVELS[p.level]) d.prefs.level = p.level;
     d.prefs.sound = p.sound !== false;
     d.prefs.predict = p.predict !== false;
+    d.prefs.beat = p.beat !== false;
     return d;
   }
   function loadSave() { try { return normalizeSave(JSON.parse(localStorage.getItem(SAVE_KEY))); } catch (e) { return defaultSave(); } }
@@ -501,7 +504,7 @@
   }
   function makeMissions(runs, minutes) {
     var T = [{ iron: 240, ice: 100, crystal: 30 }, { iron: 150, ice: 190, crystal: 30 }, { iron: 150, ice: 100, crystal: 60 }];
-    var t = T[runs % 3], k = minutes / 20 * 0.85; // 小惑星が 8 秒前から来るようになって数が減ったぶん、少なめに
+    var t = T[runs % 3], k = minutes / 20 * 0.75; // 出発の道中と、小惑星が 8 秒前から来るようになって数が減ったぶん、少なめに
     return ['iron', 'ice', 'crystal'].map(function (type) {
       var step = type === 'crystal' ? 2 : 5;
       return { type: type, need: Math.max(step, Math.round(t[type] * k / step) * step), done: false };
@@ -574,8 +577,7 @@
   function genWave() {
     var kind = G.phases[phaseIdx(G.T + 8)].kind;
     var lanes = [0, 1, 2];
-    if (G.T + 8 < CALIB) lanes = [1]; // ペースを測っている間は中央だけ
-    else if (Math.random() < 0.45) lanes.splice(rint(3), 1);
+    if (Math.random() < 0.45) lanes.splice(rint(3), 1);
     var rocks = lanes.map(function (l) { return makeRock(l, kind); });
     var comet = false, eventful = kind === 'main' || kind === 'deep' || kind === 'sprint';
     if (eventful) {
@@ -630,9 +632,8 @@
     G.debris.push({ lane: l1, from: main.start + main.dur * 0.42, to: main.start + main.dur * 0.42 + dd, warned: false, started: false });
     G.debris.push({ lane: l2, from: deep.start + deep.dur * 0.5, to: deep.start + deep.dur * 0.5 + dd, warned: false, started: false });
     G.cometDue = [main.start + main.dur * 0.78, sprint.start + sprint.dur * 0.25];
-    G.wave = genWave(); G.queue = [genWave(), genWave()];
-    G.wave.rocks = [makeRock(1, 'warm')]; // 最初は中央に 1 個
-    activate(G.wave, 6);
+    // 最初の 1 分半は出発の道中(ペースを測る)。小惑星は到着してから
+    G.wave = { rocks: [], arr: Infinity, window: WINDOW, comet: false, arrived: false }; G.queue = [{ rocks: [] }, { rocks: [] }];
     P.length = 0;
     return G;
   }
@@ -682,7 +683,7 @@
   function enterPhase(idx) {
     var ph = G.phases[idx];
     G.lastPhase = idx; G.graceUntil = G.T + GRACE;
-    if (idx === 0) toast('発進 ― 最初の 1 分半で、楽に漕げるペースを測ります', COL.text, 4.5);
+    if (idx === 0) toast('出発! 小惑星帯までは、いつものペースで楽に漕いでください', COL.text, 5);
     else toast(ph.name + ' ― 基準 ' + ph.base + ' rpm', COL.text, 3.2);
     if (ph.knob) { G.knobAsked[idx] = true; G.knobShownAt = G.T; $('knobSub').textContent = 'ノブを ' + ph.knob; $('knobBtn').hidden = false; toast('ノブを ' + ph.knob, COL.go, 4.5); }
   }
@@ -695,11 +696,14 @@
     if (idx !== G.lastPhase) enterPhase(idx);
     if (!$('knobBtn').hidden && G.T - G.knobShownAt > 40) $('knobBtn').hidden = true;
     if (!G.calibDone) {
-      if (G.T > 12 && cv >= 30) G.comfort = clamp(G.comfort + (cv - G.comfort) * Math.min(1, dt / 8), Math.max(45, G.comfort0 - 15), Math.min(95, G.comfort0 + 15));
+      if (G.T > 3 && cv >= 30) G.comfort = clamp(G.comfort + (cv - G.comfort) * Math.min(1, dt / (G.T < 30 ? 3 : 8)), Math.max(45, G.comfort0 - 20), Math.min(95, G.comfort0 + 20)); // 最初は速めに追いかけ、あとはゆっくり
       if (G.T >= CALIB) {
         G.calibDone = true; var c0 = Math.round(G.comfort);
         setBases(G.phases, c0, G.off); G.comfortSet = c0;
-        toast('あなたのペースは ' + c0 + ' rpm。これを基準にします', COL.go, 4);
+        banner('ARRIVAL', '小惑星帯に到着', 'あなたのペース ' + c0 + ' rpm を基準にします。採掘開始!', COL.go, 5.5); sfx.mission();
+        G.wave = genWave(); G.queue = [genWave(), genWave()];
+        G.wave.rocks = [0, 1, 2].map(function (l) { return makeRock(l, 'warm'); }); // 最初は 3 レーンに 1 個ずつ
+        activate(G.wave, APPROACH);
       }
     }
     var B = baseAt(G.T); G.B = B;
@@ -710,7 +714,7 @@
     G.ml = ml;
 
     // 熱
-    G.slow = G.lane === 0 && cv - B < -SLOW;
+    G.slow = G.calibDone && G.lane === 0 && cv - B < -SLOW;
     if (stalled) G.heat -= 7.5 * dt;
     else G.heat += heatRate(G.lane) * dt;
 
@@ -726,7 +730,9 @@
       }
     });
 
-    // 小惑星
+    // 小惑星(出発の道中は来ない)
+    G.mining = false;
+    if (G.calibDone) {
     var w = G.wave;
     if (!w.arrived && G.T >= w.arr) { w.arrived = true; w.rocks.forEach(function (r) { if (r.state === 'far') r.state = 'in'; }); }
     G.mining = false;
@@ -751,6 +757,7 @@
         if (cand && !stalled && G.T - G.laneSince >= LOCK_HOLD) lockOn(cand);
         else if (G.T > w.arr + w.window) missWave();
       }
+    }
     }
 
     G.heat = clamp(G.heat, 0, 100);
@@ -875,12 +882,14 @@
     buy: function () { var t = fxNow(); if (t === null) return; [392, 587, 784, 1175].forEach(function (f, i) { tone(AU.fx, 'triangle', f, f, t + i * 0.08, 0.15, 0.3); }); }
   };
   var BASS = [55, 55, 65.41, 49], ARP = [440, 523.25, 659.25, 783.99, 659.25, 523.25];
+  // ビートは「保ちたいペース」の目印。ふだんは基準(あなたのペース)、ロックオン中はその岩のレーンを保てる速さ。
+  // (前はいまいるレーンに合わせて鳴らしていたので、合わせるほど速くなっていた)
   function tempoNow() {
-    var l = G.ml < 0 ? 0 : G.ml;
-    return Math.max(30, Math.round(G.B + (l - 1) * (LANE_IN + LANE_OUT + 1) / 2)); // いまいるレーンの真ん中の速さ
+    var l = G.lock ? G.lock.lane : 1;
+    return Math.max(30, Math.round(G.B + (l - 1) * (LANE_IN + LANE_OUT + 1) / 2));
   }
   function audioSchedule() {
-    if (!AU.ctx || AU.ctx.state !== 'running' || !G || G.paused || G.finished) return;
+    if (!AU.ctx || AU.ctx.state !== 'running' || !G || G.paused || G.finished || !G.calibDone) return; // 出発の道中はビートなし(自分のペースで漕いでもらう)
     var now = AU.ctx.currentTime;
     if (AU.nextBeat < now) AU.nextBeat = now + 0.05;
     AU.filt.frequency.setTargetAtTime([1500, 5000, 14000][G.ml < 0 ? 0 : G.ml], now, 0.4);
@@ -888,15 +897,18 @@
     while (AU.nextBeat < now + 0.12) {
       var t = AU.nextBeat, b = AU.beatNo, strong = b % 4 === 0;
       AU.vis.push(t);
+      var beatOn = S.prefs.beat;
+      if (beatOn) {
       tone(AU.music, 'sine', strong ? 160 : 120, 45, t, strong ? 0.9 : 0.6, 0.16);
       tone(AU.music, 'sine', strong ? 1600 : 1100, 0, t, 0.1, 0.03);
-      if (G.chain >= 2) noise(AU.music, t + period / 2, 0.22, 0.05, 'highpass', 7000);
-      if (G.chain >= 5 && b % 2 === 0) {
+      if (G.chain >= 5) noise(AU.music, t + period / 2, 0.1, 0.04, 'highpass', 7000); // 裏拍は小さく(倍の速さに聞こえないように)
+      }
+      if (beatOn && G.chain >= 5 && b % 2 === 0) {
         var c = AU.ctx, o = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain();
         o.type = 'sawtooth'; o.frequency.value = BASS[Math.floor(b / 4) % 4]; f.type = 'lowpass'; f.frequency.value = 420;
         env(g, t, 0.26, period * 1.7); o.connect(f); f.connect(g); g.connect(AU.music); o.start(t); o.stop(t + period * 1.9);
       }
-      if (G.chain >= 10) { tone(AU.music, 'triangle', ARP[(b * 2) % 6], 0, t, 0.08, 0.16); tone(AU.music, 'triangle', ARP[(b * 2 + 1) % 6], 0, t + period / 2, 0.08, 0.16); }
+      if (beatOn && G.chain >= 10) { tone(AU.music, 'triangle', ARP[(b * 2) % 6], 0, t, 0.08, 0.16); tone(AU.music, 'triangle', ARP[(b * 2 + 1) % 6], 0, t + period / 2, 0.06, 0.16); }
       if (G.mining && G.lock) { // 採掘ビームの音
         var pf = G.lock.type === 'ice' ? 1175 : (G.lock.type === 'iron' ? 294 : 1568);
         tone(AU.fx, 'sawtooth', pf, pf * 1.5, t + period / 2, 0.035, 0.09);
@@ -1267,9 +1279,9 @@
   function render(rdt) {
     var g = ctx; g.setTransform(DPR, 0, 0, DPR, 0, 0);
     var B = G.B, c = cadenceNow(), cvv = c === null ? 0 : c, cx = GEO.cx, sy = GEO.sy, vy = GEO.vy, sB = GEO.sB;
-    var stalled = G.T < G.stallUntil, ml = G.ml < 0 ? -1 : G.ml, i;
+    var stalled = G.T < G.stallUntil, ml = !G.calibDone ? 1 : (G.ml < 0 ? -1 : G.ml), i; // 出発の道中はレーンに意味がないので、真ん中として見せる
     G.dispC += (cvv - G.dispC) * Math.min(1, rdt * 6);
-    var tx = cx + clamp((G.dispC - B) / (LANE_IN + LANE_OUT + 1) * 2, -1.45, 1.45) * GEO.wBot;
+    var tx = G.calibDone ? cx + clamp((G.dispC - B) / (LANE_IN + LANE_OUT + 1) * 2, -1.45, 1.45) * GEO.wBot : cx;
     G.shipX += (tx - G.shipX) * Math.min(1, rdt * 10);
     G.roll += (clamp((tx - G.shipX) / GEO.wBot * 1.8, -0.5, 0.5) - G.roll) * Math.min(1, rdt * 8);
     G.cadPhase += rdt * G.dispC / 60;
@@ -1292,7 +1304,7 @@
     g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.4 + 0.3 * pulse;
     g.drawImage(glow('#7a5cff'), cx - H * 0.3, vy - H * 0.3, H * 0.6, H * 0.6);
     g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
-    g.save(); g.translate(cx, vy); g.rotate(VT * 0.015); var fr = H * 0.1 / 0.44; g.drawImage(SPR.far, -fr / 2, -fr / 2, fr, fr); g.restore();
+    g.save(); g.translate(cx, vy); g.rotate(VT * 0.015); var fr = H * 0.1 / 0.44 * (G.calibDone ? 1 : lerp(0.3, 1, Math.pow(clamp(G.T / CALIB, 0, 1), 1.6))); g.drawImage(SPR.far, -fr / 2, -fr / 2, fr, fr); g.restore(); // 道中は、小惑星帯が少しずつ近づく
 
     // レーンの床
     function quad(u0, u1, s0, s1) { g.beginPath(); g.moveTo(xOf(u0, s0), yOf(s0)); g.lineTo(xOf(u1, s0), yOf(s0)); g.lineTo(xOf(u1, s1), yOf(s1)); g.lineTo(xOf(u0, s1), yOf(s1)); g.closePath(); }
@@ -1336,6 +1348,14 @@
     });
     g.globalCompositeOperation = 'source-over';
 
+    // 出発: 拠点が足もとから後ろへ遠ざかっていく
+    if (!G.calibDone && G.T < 18) {
+      var stImg = stationImage(S.base);
+      if (stImg) {
+        var dp = clamp(G.T / 18, 0, 1), ssz = H * (1.0 + dp * 1.4);
+        g.globalAlpha = 1 - dp * dp; g.drawImage(stImg, cx - ssz / 2 - W * 0.06, sy + H * 0.08 + dp * dp * H * 0.6 - ssz / 2, ssz, ssz); g.globalAlpha = 1;
+      }
+    }
     // 小惑星の位置を決める
     var list = [];
     function place(r, s, x, scale, a, isQueue) {
@@ -1471,6 +1491,7 @@
     var lx = W * 0.03, cs = String(Math.round(G.dispC));
     font(g, '900', H * 0.105, FN); g.fillStyle = COL.text; txt(g, cs, lx, strip + H * 0.115);
     var cw = g.measureText(cs).width; font(g, '700', H * 0.026, FT); g.fillStyle = COL.sub; txt(g, 'RPM', lx + cw + 8, strip + H * 0.115);
+    if (!G.calibDone) { font(g, '700', H * 0.022, FB); g.fillStyle = COL.go; txt(g, 'ペース測定中', lx + cw + 8, strip + H * 0.075); }
     var gx = lx, gw = W * 0.02, gy0 = strip + H * 0.16, gy1 = H * 0.76, span = LANE_OUT + 6;
     function GY(v) { return gy1 - (gy1 - gy0) * (clamp(v, B - span, B + span) - (B - span)) / (span * 2); }
     g.fillStyle = 'rgba(238,241,255,0.08)'; rr(g, gx, gy0, gw, gy1 - gy0, gw / 2); g.fill();
@@ -1544,7 +1565,18 @@
 
     // ---- 中央: 警告バナーとトースト ----
     var b = G.banner, ty = strip + H * 0.03;
-    if (b && VT < b.until) {
+    if (!G.calibDone && !(b && VT < b.until)) { // 出発の道中の案内
+      var dw = Math.min(W * 0.5, H * 0.78), dh = H * 0.125, dx = cx - dw / 2, pr2 = clamp(G.T / CALIB, 0, 1);
+      g.fillStyle = 'rgba(8,10,24,0.82)'; rr(g, dx, ty, dw, dh, 10); g.fill();
+      g.strokeStyle = rgba(COL.go, 0.7); g.lineWidth = 1.5; rr(g, dx, ty, dw, dh, 10); g.stroke();
+      font(g, '700', H * 0.018, FT); g.fillStyle = COL.go; txt(g, 'DEPARTURE  採掘拠点を出発', cx, ty + H * 0.028, 'center');
+      font(g, '400', H * 0.036, FD); g.fillStyle = COL.text; txt(g, '小惑星帯まで あと ' + mmss(CALIB - G.T), cx, ty + H * 0.068, 'center');
+      font(g, '700', H * 0.02, FB); g.fillStyle = COL.sub;
+      txt(g, 'いつものペースで、楽に漕いでください ・ いまのペース ' + Math.round(G.comfort) + ' rpm', cx, ty + H * 0.094, 'center');
+      g.fillStyle = 'rgba(238,241,255,0.12)'; g.fillRect(dx + 14, ty + dh - H * 0.016, dw - 28, H * 0.006);
+      g.fillStyle = COL.go; g.fillRect(dx + 14, ty + dh - H * 0.016, (dw - 28) * pr2, H * 0.006);
+      ty += dh + 8;
+    } else if (b && VT < b.until) {
       var a = Math.min(1, (VT - b.at) / 0.2, (b.until - VT) / 0.3), bw2 = Math.min(W * 0.46, H * 0.72), bh = H * 0.115, bx2 = cx - bw2 / 2;
       g.save(); g.globalAlpha = a;
       g.fillStyle = 'rgba(8,10,24,0.86)'; rr(g, bx2, ty, bw2, bh, 8); g.fill();
@@ -1606,6 +1638,11 @@
 
   // ================= 拠点の絵 =================
   var STAGES = [0, 3, 8, 15, 24]; // 拠点レベルがこれ以上になると、次の段階の絵になる
+  function stationImage(level) {
+    var want = STAGES.filter(function (t) { return level >= t; }).length - 1;
+    for (var i = want; i >= 0; i--) if (ART.station[i]) return ART.station[i];
+    return null;
+  }
   function drawBase(c, level) {
     var r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
     if (!r.width) return;
@@ -1862,6 +1899,8 @@
 
   setSound(S.prefs.sound);
   $('chkPredict').checked = S.prefs.predict;
+  $('chkBeat').checked = S.prefs.beat;
+  $('chkBeat').addEventListener('change', function () { S.prefs.beat = this.checked; save(); });
   $('chkPredict').addEventListener('change', function () { S.prefs.predict = this.checked; save(); });
   renderHome();
   loadArt();
@@ -1874,7 +1913,7 @@
   // 動作確認用(画面の動作には使わない)
   window.__space = {
     get G() { return G; }, get S() { return S; }, setCadence: setCadence, parseIndoorBikeCadence: parseIndoorBikeCadence,
-    get ART() { return ART; }, STAGES: STAGES, get SPR() { return SPR; }, laneRaw: laneRaw, laneHyst: laneHyst, heatForecast: function (r) { return heatForecast(r); }, buildPhases: buildPhases, setBases: setBases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
+    get ART() { return ART; }, STAGES: STAGES, get SPR() { return SPR; }, tempoNow: function () { return tempoNow(); }, laneRaw: laneRaw, laneHyst: laneHyst, heatForecast: function (r) { return heatForecast(r); }, buildPhases: buildPhases, setBases: setBases, makeMissions: makeMissions, phaseIdx: function (t) { return phaseIdx(t); }
   };
 })();
 </script>
